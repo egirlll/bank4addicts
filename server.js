@@ -229,56 +229,86 @@ function adminLoginHTML() {
 function adminHTML(accounts, totalDeposits, totalRelapses) {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin — Bank4Addicts</title>
 <style>
-  body{font-family:system-ui;background:#0a0a0f;color:#eee;padding:20px;max-width:700px;margin:0 auto}
-  h1{color:#ff1493;text-align:center}
-  .card{background:rgba(255,20,147,0.04);border:1px solid rgba(255,20,147,0.12);border-radius:14px;padding:20px;margin:16px 0}
-  .card h2{color:#ff69b4;font-size:14px;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px}
-  .stats{display:flex;justify-content:space-around;text-align:center;padding:8px 0}
-  .stat-num{font-size:24px;font-weight:700;color:#ff1493}
-  .stat-label{font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:2px;margin-top:4px}
-  select,input,button{padding:10px 14px;border-radius:10px;border:1px solid rgba(255,20,147,0.2);background:rgba(255,255,255,0.05);color:#eee;font-size:14px;margin:4px;box-sizing:border-box}
-  select{width:100%;margin-bottom:8px}
-  button{background:linear-gradient(135deg,#ff1493,#ff69b4);border:none;cursor:pointer;font-weight:600;color:#fff}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th{text-align:left;color:rgba(255,255,255,0.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:8px 6px;border-bottom:1px solid rgba(255,20,147,0.15)}
-  td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.04)}
-  .pink{color:#ff1493}
-  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:rgba(255,20,147,0.9);color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:500;z-index:999;transition:transform 0.4s}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e0e0e0;padding:20px;max-width:800px;margin:0 auto}
+  h1{color:#ff1493;text-align:center;font-size:22px;margin-bottom:4px}
+  .subtitle{text-align:center;font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:2px;text-transform:uppercase;margin-bottom:20px}
+  .card{background:#111118;border:1px solid rgba(255,20,147,0.1);border-radius:14px;padding:20px;margin:14px 0}
+  .card h2{color:#ff69b4;font-size:12px;text-transform:uppercase;letter-spacing:2px;margin-bottom:14px;font-weight:600}
+  .stats{display:flex;justify-content:space-around;text-align:center;padding:10px 0}
+  .stat-num{font-size:26px;font-weight:700;color:#ff1493}
+  .stat-label{font-size:9px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:2px;margin-top:6px}
+
+  select,input,button{padding:10px 14px;border-radius:10px;border:1px solid rgba(255,20,147,0.15);background:#1a1a24;color:#e0e0e0;font-size:14px;margin:4px;outline:none;-webkit-appearance:none;appearance:none}
+  select{width:100%;margin-bottom:8px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ff1493' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+  select option{background:#1a1a24;color:#e0e0e0;padding:8px}
+  input:focus,select:focus{border-color:rgba(255,20,147,0.4)}
+  button{background:linear-gradient(135deg,#ff1493,#ff69b4);border:none;cursor:pointer;font-weight:600;color:#fff;transition:opacity 0.2s}
+  button:hover{opacity:0.9}
+
+  .search-box{width:100%;padding:10px 14px 10px 36px;border-radius:10px;border:1px solid rgba(255,20,147,0.15);background:#1a1a24 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 12px center;color:#e0e0e0;font-size:14px;outline:none;margin-bottom:14px}
+  .search-box:focus{border-color:rgba(255,20,147,0.4)}
+
+  .acct-list{max-height:500px;overflow-y:auto}
+  .acct-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#13131d;border:1px solid rgba(255,255,255,0.04);border-radius:10px;margin:6px 0;transition:border-color 0.2s}
+  .acct-row:hover{border-color:rgba(255,20,147,0.2)}
+  .acct-info{flex:1}
+  .acct-name{font-size:15px;font-weight:600;color:#fff}
+  .acct-username{font-size:12px;color:#ff1493;margin-top:2px}
+  .acct-meta{font-size:11px;color:rgba(255,255,255,0.3);margin-top:4px}
+  .acct-stats{display:flex;gap:16px;text-align:center}
+  .acct-stat-val{font-size:16px;font-weight:700}
+  .acct-stat-label{font-size:8px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+  .bal{color:#ff1493}
+  .rel{color:#ff4444}
+
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:rgba(255,20,147,0.9);color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:500;z-index:999;transition:transform 0.4s;backdrop-filter:blur(10px)}
   .toast.show{transform:translateX(-50%) translateY(0)}
 </style></head><body>
 <div class="toast" id="toast"></div>
-<h1>🏦 bank4addicts admin</h1>
+<h1>🏦 bank4addicts</h1>
+<p class="subtitle">admin panel</p>
+
 <div class="card">
   <div class="stats">
     <div><div class="stat-num">${accounts.length}</div><div class="stat-label">accounts</div></div>
-    <div><div class="stat-num">$${(totalDeposits||0).toFixed(2)}</div><div class="stat-label">total deposited</div></div>
-    <div><div class="stat-num">${totalRelapses||0}</div><div class="stat-label">total relapses</div></div>
+    <div><div class="stat-num">$${(totalDeposits||0).toFixed(2)}</div><div class="stat-label">deposited</div></div>
+    <div><div class="stat-num">${totalRelapses||0}</div><div class="stat-label">relapses</div></div>
   </div>
 </div>
+
 <div class="card">
   <h2>add balance</h2>
-  <select id="acct">${accounts.map(a => `<option value="${a.id}">${a.name}${a.username?' ('+a.username+')':''} — $${(a.balance||0).toFixed(2)}</option>`).join('')}</select>
+  <select id="acct">
+    ${accounts.map(a => `<option value="${a.id}">${a.username||a.name} — $${(a.balance||0).toFixed(2)}</option>`).join('')}
+  </select>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
     <input id="amt" type="number" step="0.01" placeholder="$0" style="flex:1;min-width:80px">
     <input id="note" type="text" placeholder="note (optional)" style="flex:2;min-width:120px">
-    <button onclick="addBal()">add</button>
+    <button onclick="addBal()">add $</button>
   </div>
 </div>
+
 <div class="card">
-  <h2>accounts</h2>
-  <table>
-    <tr><th>name</th><th>username</th><th>diagnosis</th><th>balance</th><th>deposits</th><th>relapses</th><th>created</th></tr>
-    ${accounts.map(a => `<tr>
-      <td><strong>${a.name}</strong></td>
-      <td class="pink" style="font-size:12px">${a.username||'-'}</td>
-      <td style="font-size:11px;color:rgba(255,255,255,0.4)">${a.level}</td>
-      <td class="pink">$${(a.balance||0).toFixed(2)}</td>
-      <td>${a.deposits}</td>
-      <td style="color:#ff4444">${a.relapses}</td>
-      <td style="font-size:11px;color:rgba(255,255,255,0.3)">${a.created_at}</td>
-    </tr>`).join('')}
-  </table>
+  <h2>accounts (${accounts.length})</h2>
+  <input type="text" class="search-box" id="search" placeholder="search by name or username..." oninput="filterAccounts()">
+  <div class="acct-list" id="acct-list">
+    ${accounts.map(a => `
+    <div class="acct-row" data-search="${(a.name||'').toLowerCase()} ${(a.username||'').toLowerCase()}">
+      <div class="acct-info">
+        <div class="acct-name">${a.username||a.name}</div>
+        ${a.username && a.name !== a.username ? `<div class="acct-username">${a.name}</div>` : ''}
+        <div class="acct-meta">${a.level} · joined ${a.created_at}</div>
+      </div>
+      <div class="acct-stats">
+        <div><div class="acct-stat-val bal">$${(a.balance||0).toFixed(2)}</div><div class="acct-stat-label">saved</div></div>
+        <div><div class="acct-stat-val">${a.deposits||0}</div><div class="acct-stat-label">deposits</div></div>
+        <div><div class="acct-stat-val rel">${a.relapses||0}</div><div class="acct-stat-label">relapses</div></div>
+      </div>
+    </div>`).join('')}
+  </div>
 </div>
+
 <script>
 const auth='${ADMIN_AUTH}';
 function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
@@ -288,7 +318,13 @@ function addBal(){
   const note=document.getElementById('note').value;
   if(!amount||parseFloat(amount)<=0){showToast('enter an amount ~');return}
   fetch('/admin/add-balance?auth='+auth,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountId,amount,note})})
-  .then(r=>r.json()).then(d=>{if(d.ok){showToast('$'+amount+' added ~');setTimeout(()=>location.reload(),800)}else showToast('error: '+d.error)});
+  .then(r=>r.json()).then(d=>{if(d.ok){showToast('$'+amount+' added');setTimeout(()=>location.reload(),800)}else showToast('error: '+d.error)});
+}
+function filterAccounts(){
+  const q=document.getElementById('search').value.toLowerCase();
+  document.querySelectorAll('.acct-row').forEach(r=>{
+    r.style.display=r.dataset.search.includes(q)?'flex':'none';
+  });
 }
 </script>
 </body></html>`;
