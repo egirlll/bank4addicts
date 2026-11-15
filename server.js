@@ -28,6 +28,7 @@ async function initDB() {
       name TEXT NOT NULL,
       level TEXT DEFAULT 'unknown',
       score INTEGER DEFAULT 0,
+      username TEXT DEFAULT '',
       balance REAL DEFAULT 0,
       deposits INTEGER DEFAULT 0,
       relapses INTEGER DEFAULT 0,
@@ -86,9 +87,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── API ──
 
 app.post('/api/account', (req, res) => {
-  const { name, level, score } = req.body;
+  const { name, username, level, score } = req.body;
   if (!name) return res.status(400).json({ error: 'Name required' });
-  run('INSERT INTO accounts (name, level, score) VALUES (?, ?, ?)', [name, level || 'unknown', score || 0]);
+  run('INSERT INTO accounts (name, username, level, score) VALUES (?, ?, ?, ?)', [name, username || '', level || 'unknown', score || 0]);
   const account = getOne('SELECT * FROM accounts ORDER BY id DESC LIMIT 1');
   res.json(account);
 });
@@ -200,7 +201,7 @@ function adminHTML(accounts, totalDeposits, totalRelapses) {
 </div>
 <div class="card">
   <h2>add balance</h2>
-  <select id="acct">${accounts.map(a => `<option value="${a.id}">${a.name} — $${(a.balance||0).toFixed(2)}</option>`).join('')}</select>
+  <select id="acct">${accounts.map(a => `<option value="${a.id}">${a.name}${a.username?' ('+a.username+')':''} — $${(a.balance||0).toFixed(2)}</option>`).join('')}</select>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
     <input id="amt" type="number" step="0.01" placeholder="$0" style="flex:1;min-width:80px">
     <input id="note" type="text" placeholder="note (optional)" style="flex:2;min-width:120px">
@@ -210,9 +211,10 @@ function adminHTML(accounts, totalDeposits, totalRelapses) {
 <div class="card">
   <h2>accounts</h2>
   <table>
-    <tr><th>name</th><th>diagnosis</th><th>balance</th><th>deposits</th><th>relapses</th><th>created</th></tr>
+    <tr><th>name</th><th>username</th><th>diagnosis</th><th>balance</th><th>deposits</th><th>relapses</th><th>created</th></tr>
     ${accounts.map(a => `<tr>
       <td><strong>${a.name}</strong></td>
+      <td class="pink" style="font-size:12px">${a.username||'-'}</td>
       <td style="font-size:11px;color:rgba(255,255,255,0.4)">${a.level}</td>
       <td class="pink">$${(a.balance||0).toFixed(2)}</td>
       <td>${a.deposits}</td>

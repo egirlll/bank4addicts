@@ -181,7 +181,11 @@
             <div class="card-title">open account ~</div>
             <div class="input-group">
                 <label>what should we call u</label>
-                <input type="text" id="signup-name" placeholder="ur name or handle ~">
+                <input type="text" id="signup-name" placeholder="ur name ~">
+            </div>
+            <div class="input-group">
+                <label>ur twitter / socials</label>
+                <input type="text" id="signup-username" placeholder="@username">
             </div>
         </div>
         <button class="btn btn-primary" onclick="createAccount()">create account 💞</button>
@@ -473,9 +477,10 @@ function showResults() {
 // Account
 function createAccount() {
     const name=document.getElementById('signup-name').value.trim();
+    const username=document.getElementById('signup-username').value.trim();
     if(!name){showToast('u need a name ~ 🤭');return;}
     const r=results.find(r=>quizScore>=r.min&&quizScore<=r.max)||results[results.length-1];
-    api('/api/account',{name,level:r.label,score:quizScore}).then(account=>{
+    api('/api/account',{name,username,level:r.label,score:quizScore}).then(account=>{
         state=account;
         setAccountId(account.id);
         showScreen('screen-hub');
