@@ -109,6 +109,14 @@
         .modal-buttons { display:flex; gap:12px; }
         .modal-buttons .btn { flex:1; }
 
+        .nav-card { display:flex; align-items:center; justify-content:space-between; background:rgba(255,20,147,0.04); border:1px solid rgba(255,20,147,0.12); border-radius:14px; padding:18px 20px; margin:10px 0; cursor:pointer; transition:all 0.3s; }
+        .nav-card:hover { background:rgba(255,20,147,0.08); border-color:rgba(255,20,147,0.3); transform:translateX(4px); }
+        .nav-card-left { display:flex; align-items:center; gap:14px; }
+        .nav-icon { font-size:28px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; background:rgba(255,20,147,0.08); border-radius:12px; }
+        .nav-title { font-size:16px; font-weight:600; color:#ff1493; }
+        .nav-sub { font-size:12px; color:rgba(255,255,255,0.3); margin-top:3px; }
+        .nav-arrow { font-size:18px; color:rgba(255,20,147,0.4); transition:color 0.3s; }
+        .nav-card:hover .nav-arrow { color:#ff1493; }
         .fine-print { text-align:center; padding:30px 0; font-size:11px; color:rgba(255,255,255,0.12); line-height:1.8; }
         .back-link { font-size:13px; color:rgba(255,20,147,0.4); cursor:pointer; text-align:center; display:block; margin:12px 0; }
         .back-link:hover { color:#ff1493; }
@@ -227,28 +235,33 @@
             <p class="dim" style="font-size:12px; margin-top:4px;" id="hub-level"></p>
         </div>
 
-        <div class="hub-grid">
-            <div class="hub-card" onclick="showScreen('screen-bank')">
-                <div class="hub-icon">🏦</div>
-                <div class="hub-label">savings</div>
-                <div class="hub-desc">deposit ur money ~ get it back when u quit</div>
-                <div class="hub-badge badge-live">live</div>
+        <div class="nav-card" onclick="showScreen('screen-bank')">
+            <div class="nav-card-left">
+                <div class="nav-icon">🏦</div>
+                <div>
+                    <div class="nav-title">savings</div>
+                    <div class="nav-sub">$<span id="hub-balance-preview">0</span> saved · <span id="hub-streak-preview">0</span> days clean</div>
+                </div>
             </div>
-            <div class="hub-card" onclick="showScreen('screen-tracker')">
-                <div class="hub-icon">📊</div>
-                <div class="hub-label">relapse tracker</div>
-                <div class="hub-desc">log &amp; track ur relapses ~ see the pattern</div>
-                <div class="hub-badge badge-live">live</div>
-            </div>
-<!-- removed -->
+            <div class="nav-arrow">→</div>
         </div>
 
-        <div class="card">
-            <div class="card-title">ur stats</div>
+        <div class="nav-card" onclick="showScreen('screen-tracker')">
+            <div class="nav-card-left">
+                <div class="nav-icon">📊</div>
+                <div>
+                    <div class="nav-title">relapse tracker</div>
+                    <div class="nav-sub"><span id="hub-relapses-preview">0</span> relapses logged</div>
+                </div>
+            </div>
+            <div class="nav-arrow">→</div>
+        </div>
+
+        <div class="card" style="margin-top:8px;">
             <div style="display:flex; justify-content:space-around; text-align:center; padding:8px 0;">
-                <div><div class="mono pink" style="font-size:20px;" id="hub-balance">$0</div><div class="dim" style="font-size:10px; letter-spacing:2px; margin-top:4px;">SAVED</div></div>
-                <div><div class="mono pink" style="font-size:20px;" id="hub-streak">0</div><div class="dim" style="font-size:10px; letter-spacing:2px; margin-top:4px;">DAYS CLEAN</div></div>
-                <div><div class="mono" style="font-size:20px; color:#ff4444;" id="hub-relapses">0</div><div class="dim" style="font-size:10px; letter-spacing:2px; margin-top:4px;">RELAPSES</div></div>
+                <div><div class="mono pink" style="font-size:22px;" id="hub-balance">$0</div><div class="dim" style="font-size:10px; letter-spacing:2px; margin-top:4px;">SAVED</div></div>
+                <div><div class="mono pink" style="font-size:22px;" id="hub-streak">0</div><div class="dim" style="font-size:10px; letter-spacing:2px; margin-top:4px;">DAYS CLEAN</div></div>
+                <div><div class="mono" style="font-size:22px; color:#ff4444;" id="hub-relapses">0</div><div class="dim" style="font-size:10px; letter-spacing:2px; margin-top:4px;">RELAPSES</div></div>
             </div>
         </div>
 
@@ -510,6 +523,9 @@ function updateHub() {
     document.getElementById('hub-balance').textContent='$'+(state.balance||0).toLocaleString();
     document.getElementById('hub-streak').textContent=state.streak_days||0;
     document.getElementById('hub-relapses').textContent=state.relapses||0;
+    document.getElementById('hub-balance-preview').textContent=(state.balance||0).toLocaleString();
+    document.getElementById('hub-streak-preview').textContent=state.streak_days||0;
+    document.getElementById('hub-relapses-preview').textContent=state.relapses||0;
 }
 
 // Bank
