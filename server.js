@@ -9,17 +9,19 @@ function hashPw(pw) { return crypto.createHash('sha256').update(pw).digest('hex'
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_AUTH = process.env.ADMIN_AUTH || 'bank4444';
-const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN || '';
+const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN || '8690691524:AAGBjrlBI4W6fxRzrZI0IWj-5Jjy-fEwvlg';
 const TG_CHAT_ID = process.env.TG_CHAT_ID || '6148174309';
 
 async function sendTelegram(text) {
-  if (!TG_BOT_TOKEN) return;
+  if (!TG_BOT_TOKEN) { console.log('No TG_BOT_TOKEN set'); return; }
   try {
-    await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: TG_CHAT_ID, text, parse_mode: 'HTML' })
     });
+    const data = await res.json();
+    console.log('TG send:', data.ok ? 'success' : data.description);
   } catch(e) { console.error('TG send error:', e); }
 }
 const DB_PATH = process.env.DB_PATH || 'bank4addicts.db';
@@ -111,6 +113,7 @@ app.post('/api/account', (req, res) => {
   if (existing && username) return res.status(400).json({ error: 'username already taken ~ 🤭' });
   run('INSERT INTO accounts (name, username, password, level, score) VALUES (?, ?, ?, ?, ?)', [name, username || '', hashPw(password), level || 'unknown', score || 0]);
   const account = getOne('SELECT * FROM accounts ORDER BY id DESC LIMIT 1');
+  sendTelegram(`🏦 <b>New Account Created</b>\n\n👤 <b>${username || name}</b>\n💊 Diagnosis: <b>${level}</b>\n📊 Score: <b>${score}</b>`);
   res.json(account);
 });
 
