@@ -233,7 +233,30 @@
         </div>
 
         <div class="fine-print">bank4addicts ~ est. 2026 💞</div>
-        <p class="back-link" onclick="logout()" style="color:rgba(255,0,0,0.3);">logout / reset account</p>
+        <p class="back-link" onclick="showScreen('screen-logout')" style="color:rgba(255,0,0,0.3);">logout / reset account</p>
+    </div>
+
+    <!-- LOGOUT -->
+    <div class="screen" id="screen-logout">
+        <p class="back-link" onclick="showScreen('screen-hub')">← back to hub</p>
+        <div class="card center">
+            <div style="font-size:40px; margin-bottom:16px;">👋</div>
+            <p style="font-size:18px; font-weight:600; color:#ff1493; margin-bottom:8px;">leaving already? ~</p>
+            <p style="font-size:14px; color:rgba(255,255,255,0.4); line-height:1.7;">
+                u sure about this? ur savings &amp; streak will be gone forever ~
+            </p>
+        </div>
+        <div class="card">
+            <div class="card-title">ur account</div>
+            <div style="display:flex; justify-content:space-around; text-align:center; padding:8px 0;">
+                <div><div class="mono pink" id="logout-balance">$0</div><div class="dim" style="font-size:10px; margin-top:4px;">SAVED</div></div>
+                <div><div class="mono pink" id="logout-streak">0</div><div class="dim" style="font-size:10px; margin-top:4px;">DAYS CLEAN</div></div>
+                <div><div class="mono" style="color:#ff4444;" id="logout-relapses">0</div><div class="dim" style="font-size:10px; margin-top:4px;">RELAPSES</div></div>
+            </div>
+        </div>
+        <button class="btn btn-danger" onclick="confirmLogout()">delete my account 💔</button>
+        <button class="btn btn-outline" onclick="showScreen('screen-hub')">nah take me back 💞</button>
+        <p class="dim center" style="font-size:11px; margin-top:12px;">u'll be back ~ they always come back 🤭</p>
     </div>
 
     <!-- BANK -->
@@ -373,12 +396,6 @@ const questions = [
         { text: "probably not", emoji: "😬", score: 3 },
         { text: "lol", emoji: "🤭", score: 4 }
     ]},
-    { q: "what time is it right now? ~", opts: [
-        { text: "daytime", emoji: "☀️", score: 0 },
-        { text: "evening", emoji: "🌙", score: 1 },
-        { text: "past midnight", emoji: "🌑", score: 3 },
-        { text: "i don't even know anymore", emoji: "💀", score: 4 }
-    ]},
     { q: "why are u taking this test? ~", opts: [
         { text: "just curious", emoji: "🤷", score: 0 },
         { text: "someone sent it to me", emoji: "📱", score: 1 },
@@ -401,6 +418,7 @@ function showScreen(id) {
     if (id==='screen-bank') updateBank();
     if (id==='screen-tracker') updateTracker();
     if (id==='screen-withdraw') updateWithdraw();
+    if (id==='screen-logout') updateLogout();
 }
 
 function showToast(msg) {
@@ -549,13 +567,18 @@ function updateWithdraw() {
     }
 }
 
-function logout() {
-    if(confirm('reset ur account? this deletes everything ~')) {
-        localStorage.removeItem('bank4addicts');
-        state=null;
-        showScreen('screen-landing');
-        showToast('account deleted ~ see u soon 🤭');
-    }
+function updateLogout() {
+    if(!state)return;
+    document.getElementById('logout-balance').textContent='$'+state.balance.toLocaleString();
+    document.getElementById('logout-streak').textContent=state.streakDays;
+    document.getElementById('logout-relapses').textContent=state.relapses;
+}
+
+function confirmLogout() {
+    localStorage.removeItem('bank4addicts');
+    state=null;
+    showScreen('screen-landing');
+    showToast('account deleted ~ see u soon 🤭');
 }
 
 // Init
