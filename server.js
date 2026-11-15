@@ -1,0 +1,207 @@
+const express = require('express');
+const Database = require('better-sqlite3');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const ADMIN_AUTH = process.env.ADMIN_AUTH || 'bank4444';
+
+// Database
+const db = new Database(process.env.DB_PATH || 'bank4addicts.db');
+db.pragma('journal_mode = WAL');
+db.exec(`
+  CREATE TABLE IF NOT EXISTS accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    level TEXT DEFAULT 'unknown',
+    score INTEGER DEFAULT 0,
+    balance REAL DEFAULT 0,
+    deposits INTEGER DEFAULT 0,
+    relapses INTEGER DEFAULT 0,
+    best_streak INTEGER DEFAULT 0,
+    last_clean_date TEXT DEFAULT (datetime('now')),
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    amount REAL DEFAULT 0,
+    note TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (account_id) REFERENCES accounts(id)
+  );
+`);
+
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// ── API ──
+
+// Create account
+app.post('/api/account', (req, res) => {
+  const { name, level, score } = req.body;
+  if (!name) return res.status(400).json({ error: 'Name required' });
+  const result = db.prepare('INSERT INTO accounts (name, level, score) VALUES (?, ?, ?)').run(name, level || 'unknown', score || 0);
+  const account = db.prepare('SELECT * FROM accounts WHERE id = ?').get(result.lastInsertRowid);
+  res.json(account);
+});
+
+// Get account by id
+app.get('/api/account/:id', (req, res) => {
+  const account = db.prepare('SELECT * FROM accounts WHERE id = ?').get(req.params.id);
+  if (!account) return res.status(404).json({ error: 'Not found' });
+  // Calc streak
+  const now = new Date();
+  const last = new Date(account.last_clean_date + 'Z');
+  account.streak_days = Math.floor((now - last) / (1000 * 60 * 60 * 24));
+  // Get transactions
+  account.transactions = db.prepare('SELECT * FROM transactions WHERE account_id = ? ORDER BY created_at DESC LIMIT 30').all(req.params.id);
+  // Get relapse dates
+  account.relapse_dates = db.prepare("SELECT date(created_at) as d FROM transactions WHERE account_id = ? AND type = 'relapse' ORDER BY created_at DESC LIMIT 60").all(req.params.id).map(r => r.d);
+  res.json(account);
+});
+
+// Deposit (user self-deposit)
+app.post('/api/account/:id/deposit', (req, res) => {
+  const { amount, note } = req.body;
+  const amt = parseFloat(amount);
+  if (isNaN(amt) || amt <= 0) return res.status(400).json({ error: 'Invalid amount' });
+  db.prepare('UPDATE accounts SET balance = balance + ?, deposits = deposits + 1 WHERE id = ?').run(amt, req.params.id);
+  db.prepare('INSERT INTO transactions (account_id, type, amount, note) VALUES (?, ?, ?, ?)').run(req.params.id, 'deposit', amt, note || '');
+  const account = db.prepare('SELECT * FROM accounts WHERE id = ?').get(req.params.id);
+  res.json(account);
+});
+
+// Relapse
+app.post('/api/account/:id/relapse', (req, res) => {
+  const account = db.prepare('SELECT * FROM accounts WHERE id = ?').get(req.params.id);
+  if (!account) return res.status(404).json({ error: 'Not found' });
+  const now = new Date();
+  const last = new Date(account.last_clean_date + 'Z');
+  const streak = Math.floor((now - last) / (1000 * 60 * 60 * 24));
+  const newBest = Math.max(account.best_streak, streak);
+  db.prepare('UPDATE accounts SET relapses = relapses + 1, best_streak = ?, last_clean_date = datetime(\'now\') WHERE id = ?').run(newBest, req.params.id);
+  db.prepare('INSERT INTO transactions (account_id, type, amount, note) VALUES (?, ?, ?, ?)').run(req.params.id, 'relapse', 0, '');
+  res.json({ ok: true, streak_was: streak });
+});
+
+// Delete account
+app.delete('/api/account/:id', (req, res) => {
+  db.prepare('DELETE FROM transactions WHERE account_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM accounts WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// ── ADMIN ──
+
+app.get('/admin', (req, res) => {
+  if (req.query.auth !== ADMIN_AUTH) {
+    return res.send(adminLoginHTML());
+  }
+  const accounts = db.prepare('SELECT * FROM accounts ORDER BY created_at DESC').all();
+  const totalDeposits = db.prepare("SELECT COALESCE(SUM(amount),0) as total FROM transactions WHERE type = 'deposit'").get().total;
+  const totalRelapses = db.prepare("SELECT COUNT(*) as total FROM transactions WHERE type = 'relapse'").get().total;
+  res.send(adminHTML(accounts, totalDeposits, totalRelapses));
+});
+
+app.post('/admin/add-balance', (req, res) => {
+  if (req.query.auth !== ADMIN_AUTH) return res.status(403).json({ error: 'Forbidden' });
+  const { accountId, amount, note } = req.body;
+  const amt = parseFloat(amount);
+  if (!accountId || isNaN(amt) || amt <= 0) return res.status(400).json({ error: 'Invalid' });
+  db.prepare('UPDATE accounts SET balance = balance + ?, deposits = deposits + 1 WHERE id = ?').run(amt, accountId);
+  db.prepare('INSERT INTO transactions (account_id, type, amount, note) VALUES (?, ?, ?, ?)').run(accountId, 'deposit', amt, note || 'admin deposit');
+  res.json({ ok: true });
+});
+
+function adminLoginHTML() {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin</title>
+<style>
+  body{font-family:system-ui;background:#0a0a0f;color:#eee;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0}
+  .box{background:rgba(255,20,147,0.04);border:1px solid rgba(255,20,147,0.12);border-radius:16px;padding:32px;max-width:360px;width:90%;text-align:center}
+  h2{color:#ff1493;margin-bottom:16px}
+  input{width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,20,147,0.2);border-radius:10px;color:#fff;font-size:15px;outline:none;margin:8px 0;text-align:center}
+  button{width:100%;padding:12px;background:linear-gradient(135deg,#ff1493,#ff69b4);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px}
+</style></head><body>
+<div class="box"><h2>🏦 admin</h2>
+<input id="pin" type="password" placeholder="pin ~" onkeydown="if(event.key==='Enter')go()">
+<button onclick="go()">login</button>
+</div>
+<script>function go(){window.location='/admin?auth='+document.getElementById('pin').value}</script>
+</body></html>`;
+}
+
+function adminHTML(accounts, totalDeposits, totalRelapses) {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Admin — Bank4Addicts</title>
+<style>
+  body{font-family:system-ui;background:#0a0a0f;color:#eee;padding:20px;max-width:700px;margin:0 auto}
+  h1{color:#ff1493;text-align:center}
+  .card{background:rgba(255,20,147,0.04);border:1px solid rgba(255,20,147,0.12);border-radius:14px;padding:20px;margin:16px 0}
+  .card h2{color:#ff69b4;font-size:14px;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px}
+  .stats{display:flex;justify-content:space-around;text-align:center;padding:8px 0}
+  .stat-num{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:#ff1493}
+  .stat-label{font-size:10px;color:rgba(255,255,255,0.3);text-transform:uppercase;letter-spacing:2px;margin-top:4px}
+  select,input,button{padding:10px 14px;border-radius:10px;border:1px solid rgba(255,20,147,0.2);background:rgba(255,255,255,0.05);color:#eee;font-size:14px;margin:4px}
+  select{width:100%;margin-bottom:8px} input{width:100px}
+  button{background:linear-gradient(135deg,#ff1493,#ff69b4);border:none;cursor:pointer;font-weight:600;color:#fff}
+  button:hover{opacity:0.9}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;color:rgba(255,255,255,0.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;padding:8px 6px;border-bottom:1px solid rgba(255,20,147,0.15)}
+  td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.04)}
+  .pink{color:#ff1493} .mono{font-family:'JetBrains Mono',monospace}
+  .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-100px);background:rgba(255,20,147,0.9);color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:500;z-index:999;transition:transform 0.4s}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+</style></head><body>
+<div class="toast" id="toast"></div>
+<h1>🏦 bank4addicts admin</h1>
+
+<div class="card">
+  <div class="stats">
+    <div><div class="stat-num">${accounts.length}</div><div class="stat-label">accounts</div></div>
+    <div><div class="stat-num">$${totalDeposits.toFixed(2)}</div><div class="stat-label">total deposited</div></div>
+    <div><div class="stat-num">${totalRelapses}</div><div class="stat-label">total relapses</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>add balance</h2>
+  <select id="acct">${accounts.map(a => `<option value="${a.id}">${a.name} — $${a.balance.toFixed(2)}</option>`).join('')}</select>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <input id="amt" type="number" step="0.01" placeholder="$0" style="flex:1;min-width:80px">
+    <input id="note" type="text" placeholder="note (optional)" style="flex:2;min-width:120px">
+    <button onclick="addBal()">add</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>accounts</h2>
+  <table>
+    <tr><th>name</th><th>diagnosis</th><th>balance</th><th>deposits</th><th>relapses</th><th>created</th></tr>
+    ${accounts.map(a => `<tr>
+      <td><strong>${a.name}</strong></td>
+      <td style="font-size:11px;color:rgba(255,255,255,0.4)">${a.level}</td>
+      <td class="pink mono">$${a.balance.toFixed(2)}</td>
+      <td class="mono">${a.deposits}</td>
+      <td class="mono" style="color:#ff4444">${a.relapses}</td>
+      <td style="font-size:11px;color:rgba(255,255,255,0.3)">${a.created_at}</td>
+    </tr>`).join('')}
+  </table>
+</div>
+
+<script>
+const auth='${ADMIN_AUTH}';
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+function addBal(){
+  const accountId=+document.getElementById('acct').value;
+  const amount=document.getElementById('amt').value;
+  const note=document.getElementById('note').value;
+  if(!amount||parseFloat(amount)<=0){showToast('enter an amount ~');return}
+  fetch('/admin/add-balance?auth='+auth,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountId,amount,note})})
+  .then(r=>r.json()).then(d=>{if(d.ok){showToast('$'+amount+' added ~');setTimeout(()=>location.reload(),800)}else showToast('error: '+d.error)});
+}
+</script>
+</body></html>`;
+}
+
+app.listen(PORT, () => console.log(`Bank4Addicts running on :${PORT}`));

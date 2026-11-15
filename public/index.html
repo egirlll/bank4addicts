@@ -390,11 +390,11 @@ const questions = [
         { text: "probably not", emoji: "😬", score: 3 },
         { text: "lol", emoji: "🤭", score: 4 }
     ]},
-    { q: "why are u taking this test? ~", opts: [
-        { text: "just curious", emoji: "🤷", score: 0 },
-        { text: "someone sent it to me", emoji: "📱", score: 1 },
-        { text: "i think i have a problem", emoji: "😔", score: 3 },
-        { text: "i know i have a problem", emoji: "💞", score: 4 }
+    { q: "is this affecting ur real life? ~", opts: [
+        { text: "nah it's just fun", emoji: "😎", score: 0 },
+        { text: "a little ~ i've missed some things", emoji: "😅", score: 1 },
+        { text: "it's starting to take over", emoji: "😬", score: 3 },
+        { text: "what real life", emoji: "💀", score: 4 }
     ]}
 ];
 
@@ -404,6 +404,11 @@ const results = [
     { min:13, max:19, label:"addicted ~", desc:"u're past the point of 'i can stop whenever i want' 🤭 u can't ~ ur brain has already rewired itself around this ~ u need help ~", pct:65 },
     { min:20, max:28, label:"cooked 💀", desc:"u are DEEP 💞 u probably knew the result before u even started ~ the good news? bank4addicts was literally built for people like u ~ open an account before it gets worse ~ (it will)", pct:92 }
 ];
+
+const api = (path, body) => body
+    ? fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(r=>r.json())
+    : fetch(path).then(r=>r.json());
+const apiDel = (path) => fetch(path,{method:'DELETE'}).then(r=>r.json());
 
 function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -420,15 +425,27 @@ function showToast(msg) {
     setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-function loadState() {
-    const s=localStorage.getItem('bank4addicts');
-    if(s){state=JSON.parse(s); calcStreak();} return state;
+// Account stored as id in localStorage, data fetched from server
+function getAccountId() { return localStorage.getItem('b4a_id'); }
+function setAccountId(id) { localStorage.setItem('b4a_id', id); }
+function clearAccountId() { localStorage.removeItem('b4a_id'); }
+
+async function loadAccount() {
+    const id = getAccountId();
+    if (!id) return null;
+    try {
+        const data = await fetch('/api/account/'+id).then(r => r.ok ? r.json() : null);
+        if (data) { state = data; return state; }
+    } catch(e) {}
+    return null;
 }
-function saveState() { localStorage.setItem('bank4addicts',JSON.stringify(state)); }
-function calcStreak() {
-    if(state&&state.lastCleanDate){ const now=new Date(),last=new Date(state.lastCleanDate); state.streakDays=Math.floor((now-last)/(1000*60*60*24)); }
+
+function tryLogin() {
+    loadAccount().then(s => {
+        if(s) { showScreen('screen-hub'); showToast('welcome back ~ 💞'); }
+        else { showToast('no account found ~ take the test first 🤭'); }
+    });
 }
-function tryLogin() { if(loadState()){showScreen('screen-hub');showToast('welcome back ~ 💞');}else{showToast('no account found ~ take the test first 🤭');} }
 
 // Quiz
 function startQuiz() { quizStep=0; quizScore=0; showScreen('screen-quiz'); renderQuiz(); }
@@ -458,34 +475,42 @@ function createAccount() {
     const name=document.getElementById('signup-name').value.trim();
     if(!name){showToast('u need a name ~ 🤭');return;}
     const r=results.find(r=>quizScore>=r.min&&quizScore<=r.max)||results[results.length-1];
-    state={name,level:r.label,score:quizScore,balance:0,deposits:0,relapses:0,streakDays:0,bestStreak:0,lastCleanDate:new Date().toISOString(),transactions:[],relapseDates:[],created:new Date().toISOString()};
-    saveState(); showScreen('screen-hub'); showToast('account opened ~ good luck 💞');
+    api('/api/account',{name,level:r.label,score:quizScore}).then(account=>{
+        state=account;
+        setAccountId(account.id);
+        showScreen('screen-hub');
+        showToast('account opened ~ good luck 💞');
+    });
 }
 
 // Hub
 function updateHub() {
-    if(!state)return; calcStreak();
+    if(!state)return;
     document.getElementById('hub-name').textContent=state.name+' ~';
     document.getElementById('hub-level').textContent='diagnosis: '+state.level;
-    document.getElementById('hub-balance').textContent='$'+state.balance.toLocaleString();
-    document.getElementById('hub-streak').textContent=state.streakDays;
-    document.getElementById('hub-relapses').textContent=state.relapses;
+    document.getElementById('hub-balance').textContent='$'+(state.balance||0).toLocaleString();
+    document.getElementById('hub-streak').textContent=state.streak_days||0;
+    document.getElementById('hub-relapses').textContent=state.relapses||0;
 }
 
 // Bank
 function updateBank() {
-    if(!state)return; calcStreak();
-    document.getElementById('bank-balance').textContent='$'+state.balance.toLocaleString();
-    document.getElementById('bank-deposits').textContent=state.deposits+' deposit'+(state.deposits!==1?'s':'');
-    document.getElementById('bank-streak').textContent=state.streakDays;
-    document.getElementById('bank-streak-bar').style.width=Math.min(state.streakDays/30*100,100)+'%';
-    const list=document.getElementById('tx-list');
-    if(!state.transactions.length){list.innerHTML='<li class="tx-item dim" style="font-style:italic;">no transactions yet ~</li>';}
-    else{list.innerHTML=state.transactions.slice().reverse().slice(0,20).map(tx=>{
-        const d=new Date(tx.date).toLocaleDateString('en-NZ',{day:'numeric',month:'short'});
-        return tx.type==='deposit'?`<li class="tx-item"><span class="tx-type tx-deposit">deposit</span><span class="dim" style="font-size:11px;">${d}</span><span class="tx-amount">+$${tx.amount}</span></li>`:
-        `<li class="tx-item"><span class="tx-type tx-relapse">relapse</span><span class="dim" style="font-size:11px;">${d}</span><span style="color:#ff4444; font-size:12px;">streak reset</span></li>`;
-    }).join('');}
+    if(!state)return;
+    loadAccount().then(()=>{
+        document.getElementById('bank-balance').textContent='$'+(state.balance||0).toLocaleString();
+        document.getElementById('bank-deposits').textContent=(state.deposits||0)+' deposit'+((state.deposits||0)!==1?'s':'');
+        document.getElementById('bank-streak').textContent=state.streak_days||0;
+        document.getElementById('bank-streak-bar').style.width=Math.min((state.streak_days||0)/30*100,100)+'%';
+        const list=document.getElementById('tx-list');
+        const txs=state.transactions||[];
+        if(!txs.length){list.innerHTML='<li class="tx-item dim" style="font-style:italic;">no transactions yet ~</li>';}
+        else{list.innerHTML=txs.map(tx=>{
+            const d=new Date(tx.created_at).toLocaleDateString('en-NZ',{day:'numeric',month:'short'});
+            const noteStr=tx.note?` · ${tx.note}`:'';
+            return tx.type==='deposit'?`<li class="tx-item"><span class="tx-type tx-deposit">deposit</span><span class="dim" style="font-size:11px;">${d}${noteStr}</span><span class="tx-amount">+$${tx.amount}</span></li>`:
+            `<li class="tx-item"><span class="tx-type tx-relapse">relapse</span><span class="dim" style="font-size:11px;">${d}</span><span style="color:#ff4444; font-size:12px;">streak reset</span></li>`;
+        }).join('');}
+    });
 }
 
 function selectAmount(amt,el) { selectedAmount=amt; document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); document.getElementById('custom-amount').value=''; }
@@ -493,9 +518,10 @@ function recordDeposit() {
     const custom=parseInt(document.getElementById('custom-amount').value)||0;
     const amount=custom||selectedAmount;
     if(amount<=0){event.preventDefault();showToast('pick an amount ~ 🤭');return;}
-    state.balance+=amount; state.deposits++;
-    state.transactions.push({type:'deposit',amount,date:new Date().toISOString()});
-    saveState(); showToast('$'+amount+' deposited ~ 💞'); setTimeout(()=>showScreen('screen-bank'),500);
+    api('/api/account/'+state.id+'/deposit',{amount}).then(()=>{
+        showToast('$'+amount+' deposited ~ 💞');
+        setTimeout(()=>showScreen('screen-bank'),500);
+    });
     document.getElementById('deposit-link').href=PAYMENT_URL;
 }
 
@@ -503,52 +529,49 @@ function recordDeposit() {
 function openRelapseModal(){document.getElementById('relapseModal').classList.add('show');}
 function closeModal(){document.getElementById('relapseModal').classList.remove('show');}
 function confirmRelapse() {
-    if(state.streakDays>state.bestStreak) state.bestStreak=state.streakDays;
-    state.relapses++; state.streakDays=0; state.lastCleanDate=new Date().toISOString();
-    state.transactions.push({type:'relapse',date:new Date().toISOString()});
-    state.relapseDates.push(new Date().toISOString().split('T')[0]);
-    saveState(); closeModal(); updateBank();
-    const msgs=['streak reset ~ see u tomorrow 🤭','day 0 again ~ knew it 💞','there it is ~ clock resets 🤭','maybe next time ~ (there\'s always a next time) 💞'];
-    showToast(msgs[Math.floor(Math.random()*msgs.length)]);
+    api('/api/account/'+state.id+'/relapse',{}).then(data=>{
+        closeModal();
+        loadAccount().then(()=>updateBank());
+        const msgs=['streak reset ~ see u tomorrow 🤭','day 0 again ~ knew it 💞','there it is ~ clock resets 🤭','maybe next time ~ (there\'s always a next time) 💞'];
+        showToast(msgs[Math.floor(Math.random()*msgs.length)]);
+    });
 }
 function logRelapse() {
-    if(state.streakDays>state.bestStreak) state.bestStreak=state.streakDays;
-    state.relapses++; state.streakDays=0; state.lastCleanDate=new Date().toISOString();
-    state.transactions.push({type:'relapse',date:new Date().toISOString()});
-    const today=new Date().toISOString().split('T')[0];
-    if(!state.relapseDates.includes(today)) state.relapseDates.push(today);
-    saveState(); updateTracker();
-    showToast('relapse logged ~ day 0 again 💔');
+    api('/api/account/'+state.id+'/relapse',{}).then(()=>{
+        loadAccount().then(()=>updateTracker());
+        showToast('relapse logged ~ day 0 again 💔');
+    });
 }
 
 // Tracker
 function updateTracker() {
-    if(!state)return; calcStreak();
-    document.getElementById('tracker-total').textContent=state.relapses;
-    document.getElementById('tracker-streak').textContent=state.streakDays;
-    document.getElementById('tracker-best').textContent=state.bestStreak||0;
-    // Weekly count
-    const now=new Date(); const weekAgo=new Date(now-7*24*60*60*1000);
-    const weekly=state.relapseDates.filter(d=>new Date(d)>=weekAgo).length;
-    document.getElementById('tracker-weekly').textContent=weekly;
-    // Calendar
-    const cal=document.getElementById('tracker-calendar');
-    let html='';
-    for(let i=27;i>=0;i--){
-        const d=new Date(); d.setDate(d.getDate()-i);
-        const ds=d.toISOString().split('T')[0];
-        const isToday=i===0;
-        const relapsed=state.relapseDates.includes(ds);
-        const clean=!relapsed&&new Date(state.created)<=d;
-        html+=`<div class="cal-day ${relapsed?'relapsed':''} ${clean?'clean':''} ${isToday?'today':''}">${d.getDate()}</div>`;
-    }
-    cal.innerHTML=html;
+    if(!state)return;
+    loadAccount().then(()=>{
+        document.getElementById('tracker-total').textContent=state.relapses||0;
+        document.getElementById('tracker-streak').textContent=state.streak_days||0;
+        document.getElementById('tracker-best').textContent=state.best_streak||0;
+        const dates=state.relapse_dates||[];
+        const now=new Date(); const weekAgo=new Date(now-7*24*60*60*1000);
+        const weekly=dates.filter(d=>new Date(d)>=weekAgo).length;
+        document.getElementById('tracker-weekly').textContent=weekly;
+        const cal=document.getElementById('tracker-calendar');
+        let html='';
+        for(let i=27;i>=0;i--){
+            const d=new Date(); d.setDate(d.getDate()-i);
+            const ds=d.toISOString().split('T')[0];
+            const isToday=i===0;
+            const relapsed=dates.includes(ds);
+            const clean=!relapsed&&new Date(state.created_at)<=d;
+            html+=`<div class="cal-day ${relapsed?'relapsed':''} ${clean?'clean':''} ${isToday?'today':''}">${d.getDate()}</div>`;
+        }
+        cal.innerHTML=html;
+    });
 }
 
 // Withdraw
 function updateWithdraw() {
-    if(!state)return; calcStreak();
-    const remaining=Math.max(0,30-state.streakDays);
+    if(!state)return;
+    const remaining=Math.max(0,30-(state.streak_days||0));
     document.getElementById('days-remaining').textContent=remaining;
     if(remaining<=0){
         document.getElementById('withdraw-card').innerHTML=`
@@ -563,87 +586,22 @@ function updateWithdraw() {
 
 function updateLogout() {
     if(!state)return;
-    document.getElementById('logout-balance').textContent='$'+state.balance.toLocaleString();
-    document.getElementById('logout-streak').textContent=state.streakDays;
-    document.getElementById('logout-relapses').textContent=state.relapses;
+    document.getElementById('logout-balance').textContent='$'+(state.balance||0).toLocaleString();
+    document.getElementById('logout-streak').textContent=state.streak_days||0;
+    document.getElementById('logout-relapses').textContent=state.relapses||0;
 }
 
 function confirmLogout() {
-    localStorage.removeItem('bank4addicts');
+    if(state && state.id) apiDel('/api/account/'+state.id);
+    clearAccountId();
     state=null;
     showScreen('screen-landing');
     showToast('account deleted ~ see u soon 🤭');
 }
 
-// Voucher claim
-function checkVoucher() {
-    const params = new URLSearchParams(window.location.search);
-    const deposit = parseInt(params.get('deposit'));
-    const code = params.get('code');
-    const note = params.get('note') || '';
-    if (!deposit || !code) return;
-
-    // Check if already claimed
-    const claimed = JSON.parse(localStorage.getItem('b4a_claimed') || '[]');
-    if (claimed.includes(code)) {
-        showToast('this voucher was already claimed ~ 🤭');
-        window.history.replaceState({}, '', window.location.pathname);
-        return;
-    }
-
-    // If no account, save voucher for after signup
-    if (!state) {
-        sessionStorage.setItem('b4a_pending_voucher', JSON.stringify({ deposit, code, note }));
-        showToast('$' + deposit + ' deposit waiting ~ create an account first 💞');
-        window.history.replaceState({}, '', window.location.pathname);
-        return;
-    }
-
-    // Credit account
-    claimVoucher(deposit, code, note);
-}
-
-function claimVoucher(amount, code, note) {
-    state.balance += amount;
-    state.deposits++;
-    state.transactions.push({
-        type: 'deposit',
-        amount,
-        note: note || 'voucher deposit',
-        date: new Date().toISOString()
-    });
-
-    // Mark as claimed
-    const claimed = JSON.parse(localStorage.getItem('b4a_claimed') || '[]');
-    claimed.push(code);
-    localStorage.setItem('b4a_claimed', JSON.stringify(claimed));
-
-    saveState();
-    window.history.replaceState({}, '', window.location.pathname);
-    showScreen('screen-hub');
-    showToast('$' + amount + ' deposited to ur account ~ 💞');
-}
-
-function checkPendingVoucher() {
-    const pending = sessionStorage.getItem('b4a_pending_voucher');
-    if (pending && state) {
-        const v = JSON.parse(pending);
-        claimVoucher(v.deposit, v.code, v.note);
-        sessionStorage.removeItem('b4a_pending_voucher');
-    }
-}
-
-// Patch createAccount to check pending vouchers after signup
-const _origCreateAccount = createAccount;
-createAccount = function() {
-    _origCreateAccount();
-    if (state) checkPendingVoucher();
-};
-
 // Init
 document.getElementById('deposit-link').href=PAYMENT_URL;
-if(loadState()) { showScreen('screen-hub'); checkVoucher(); }
-else { checkVoucher(); }
+loadAccount().then(s => { if(s) showScreen('screen-hub'); });
 </script>
 </body>
 </html>
