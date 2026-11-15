@@ -242,7 +242,8 @@
         <div class="card center">
             <p style="font-size:13px; color:rgba(255,255,255,0.3);">logged in as</p>
             <p style="font-size:18px; font-weight:600; color:#ff1493;" id="hub-name"></p>
-            <p class="dim" style="font-size:12px; margin-top:4px;" id="hub-level"></p>
+            <p class="mono pink" style="font-size:24px; margin-top:6px;" id="hub-total-saved">$0</p>
+            <p class="dim" style="font-size:11px; margin-top:2px;">total saved</p>
         </div>
 
         <div class="nav-card" onclick="showScreen('screen-bank')">
@@ -607,6 +608,7 @@ function updateHub() {
     document.getElementById('hub-name').textContent=(state.username||state.name)+' ~';
     document.getElementById('hub-level').textContent='diagnosis: '+state.level;
     document.getElementById('hub-balance').textContent='$'+(state.balance||0).toLocaleString();
+    document.getElementById('hub-total-saved').textContent='$'+(state.balance||0).toLocaleString();
     document.getElementById('hub-streak').textContent=state.streak_days||0;
     document.getElementById('hub-relapses').textContent=state.relapses||0;
     document.getElementById('hub-balance-preview').textContent=(state.balance||0).toLocaleString();
