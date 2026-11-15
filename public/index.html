@@ -177,10 +177,6 @@
                 <label>ur username</label>
                 <input type="text" id="pretest-username" placeholder="@username">
             </div>
-            <div class="input-group">
-                <label>create a password</label>
-                <input type="password" id="pretest-password" placeholder="so u can log back in ~">
-            </div>
         </div>
         <button class="btn btn-primary" onclick="beginQuiz()">start test 💞</button>
         <p class="back-link" onclick="showScreen('screen-landing')">back</p>
@@ -211,10 +207,13 @@
 
     <!-- SIGNUP -->
     <div class="screen" id="screen-signup">
-        <div class="card center">
-            <p style="font-size:16px; color:rgba(255,255,255,0.6); line-height:1.7;">
-                ready to start ur recovery? 💞
-            </p>
+        <div class="card">
+            <div class="card-title">create ur account ~</div>
+            <p style="font-size:13px; color:rgba(255,255,255,0.4); margin-bottom:14px;">set a password so u can log back in 💞</p>
+            <div class="input-group">
+                <label>password</label>
+                <input type="password" id="signup-password" placeholder="create a password ~">
+            </div>
         </div>
         <button class="btn btn-primary" onclick="createAccount()">open my account 💞</button>
         <p class="back-link" onclick="showScreen('screen-results')">back</p>
@@ -446,12 +445,9 @@ function tryLogin() {
 // Pre-test + Quiz
 let pretestName = '';
 let pretestUsername = '';
-let pretestPassword = '';
 function beginQuiz() {
     pretestUsername = document.getElementById('pretest-username').value.trim();
-    pretestPassword = document.getElementById('pretest-password').value;
     if(!pretestUsername){showToast('we need ur username ~ 🤭');return;}
-    if(!pretestPassword){showToast('u need a password ~ 🤭');return;}
     pretestName = pretestUsername;
     startQuiz();
 }
@@ -495,8 +491,10 @@ function showResults() {
 
 // Account
 function createAccount() {
+    const password=document.getElementById('signup-password').value;
+    if(!password){showToast('u need a password ~ 🤭');return;}
     const r=results.find(r=>quizScore>=r.min&&quizScore<=r.max)||results[results.length-1];
-    api('/api/account',{name:pretestName,username:pretestUsername,password:pretestPassword,level:r.label,score:quizScore}).then(account=>{
+    api('/api/account',{name:pretestName,username:pretestUsername,password,level:r.label,score:quizScore}).then(account=>{
         state=account;
         setAccountId(account.id);
         showScreen('screen-hub');
