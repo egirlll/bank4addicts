@@ -1,6 +1,7 @@
 const express = require('express');
 const initSqlJs = require('sql.js');
 const crypto = require('crypto');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
@@ -12,17 +13,23 @@ const ADMIN_AUTH = process.env.ADMIN_AUTH || 'bank4444';
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN || '9088145103:AAELJPuzEIHBC62jXdWKoMxvcTrKVwvbaW0';
 const TG_CHAT_ID = process.env.TG_CHAT_ID || '6148174309';
 
-async function sendTelegram(text) {
+function sendTelegram(text) {
   if (!TG_BOT_TOKEN) { console.log('No TG_BOT_TOKEN set'); return; }
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: TG_CHAT_ID, text, parse_mode: 'HTML' })
-    });
-    const data = await res.json();
-    console.log('TG send:', data.ok ? 'success' : data.description);
-  } catch(e) { console.error('TG send error:', e); }
+  const payload = JSON.stringify({ chat_id: TG_CHAT_ID, text, parse_mode: 'HTML' });
+  const opts = {
+    hostname: 'api.telegram.org',
+    path: `/bot${TG_BOT_TOKEN}/sendMessage`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }
+  };
+  const req = https.request(opts, (res) => {
+    let body = '';
+    res.on('data', d => body += d);
+    res.on('end', () => console.log('TG send:', body));
+  });
+  req.on('error', e => console.error('TG error:', e.message));
+  req.write(payload);
+  req.end();
 }
 const DB_PATH = process.env.DB_PATH || 'bank4addicts.db';
 
