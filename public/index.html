@@ -525,10 +525,12 @@ async function loadAccount() {
     const id = getAccountId();
     if (!id) return null;
     try {
-        const data = await fetch('/api/account/'+id).then(r => r.ok ? r.json() : null);
-        if (data) { state = data; return state; }
-    } catch(e) {}
-    return null;
+        const resp = await fetch('/api/account/'+id);
+        if (!resp.ok) { clearAccountId(); return null; }
+        const data = await resp.json();
+        if (data && data.id) { state = data; return state; }
+        clearAccountId(); return null;
+    } catch(e) { clearAccountId(); return null; }
 }
 
 function tryLogin() {
@@ -602,7 +604,7 @@ function createAccount() {
 // Hub
 function updateHub() {
     if(!state)return;
-    document.getElementById('hub-name').textContent=state.name+' ~';
+    document.getElementById('hub-name').textContent=(state.username||state.name)+' ~';
     document.getElementById('hub-level').textContent='diagnosis: '+state.level;
     document.getElementById('hub-balance').textContent='$'+(state.balance||0).toLocaleString();
     document.getElementById('hub-streak').textContent=state.streak_days||0;
