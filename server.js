@@ -1,7 +1,10 @@
 const express = require('express');
 const initSqlJs = require('sql.js');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+
+function hashPw(pw) { return crypto.createHash('sha256').update(pw).digest('hex'); }
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +32,7 @@ async function initDB() {
       level TEXT DEFAULT 'unknown',
       score INTEGER DEFAULT 0,
       username TEXT DEFAULT '',
+      password TEXT DEFAULT '',
       balance REAL DEFAULT 0,
       deposits INTEGER DEFAULT 0,
       relapses INTEGER DEFAULT 0,
@@ -87,10 +91,28 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── API ──
 
 app.post('/api/account', (req, res) => {
-  const { name, username, level, score } = req.body;
+  const { name, username, password, level, score } = req.body;
   if (!name) return res.status(400).json({ error: 'Name required' });
-  run('INSERT INTO accounts (name, username, level, score) VALUES (?, ?, ?, ?)', [name, username || '', level || 'unknown', score || 0]);
+  if (!password) return res.status(400).json({ error: 'Password required' });
+  const existing = getOne('SELECT id FROM accounts WHERE username = ?', [username || '']);
+  if (existing && username) return res.status(400).json({ error: 'username already taken ~ 🤭' });
+  run('INSERT INTO accounts (name, username, password, level, score) VALUES (?, ?, ?, ?, ?)', [name, username || '', hashPw(password), level || 'unknown', score || 0]);
   const account = getOne('SELECT * FROM accounts ORDER BY id DESC LIMIT 1');
+  res.json(account);
+});
+
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'fill in both fields ~ 🤭' });
+  const account = getOne('SELECT * FROM accounts WHERE username = ?', [username]);
+  if (!account) return res.json({ error: 'no account found ~ 🤭' });
+  if (account.password !== hashPw(password)) return res.json({ error: 'wrong password ~ 🤭' });
+  const now = new Date();
+  const last = new Date(account.last_clean_date + 'Z');
+  account.streak_days = Math.max(0, Math.floor((now - last) / (1000 * 60 * 60 * 24)));
+  account.transactions = getAll('SELECT * FROM transactions WHERE account_id = ? ORDER BY created_at DESC LIMIT 30', [account.id]);
+  account.relapse_dates = getAll("SELECT date(created_at) as d FROM transactions WHERE account_id = ? AND type = 'relapse' ORDER BY created_at DESC LIMIT 60", [account.id]).map(r => r.d);
+  delete account.password;
   res.json(account);
 });
 

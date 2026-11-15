@@ -146,10 +146,27 @@
             </p>
         </div>
         <button class="btn btn-primary" onclick="showScreen('screen-pretest')">take the addiction test 🤭</button>
-        <button class="btn btn-outline" onclick="tryLogin()">i already have an account</button>
+        <button class="btn btn-outline" onclick="showScreen('screen-login')">i already have an account</button>
         <div class="fine-print">
             withdrawal success rate: 0% ~ maybe u'll be the first 🤭
         </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="screen" id="screen-login">
+        <div class="card">
+            <div class="card-title">welcome back ~</div>
+            <div class="input-group">
+                <label>username</label>
+                <input type="text" id="login-username" placeholder="@username">
+            </div>
+            <div class="input-group">
+                <label>password</label>
+                <input type="password" id="login-password" placeholder="ur password ~">
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="doLogin()">log in 💞</button>
+        <p class="back-link" onclick="showScreen('screen-landing')">back</p>
     </div>
 
     <!-- PRE-TEST -->
@@ -159,6 +176,10 @@
             <div class="input-group">
                 <label>ur username</label>
                 <input type="text" id="pretest-username" placeholder="@username">
+            </div>
+            <div class="input-group">
+                <label>create a password</label>
+                <input type="password" id="pretest-password" placeholder="so u can log back in ~">
             </div>
         </div>
         <button class="btn btn-primary" onclick="beginQuiz()">start test 💞</button>
@@ -233,30 +254,6 @@
         </div>
 
         <div class="fine-print">bank4addicts ~ est. 2026 💞</div>
-        <p class="back-link" onclick="showScreen('screen-logout')" style="color:rgba(255,0,0,0.3);">logout / reset account</p>
-    </div>
-
-    <!-- LOGOUT -->
-    <div class="screen" id="screen-logout">
-        <p class="back-link" onclick="showScreen('screen-hub')">← back to hub</p>
-        <div class="card center">
-            <div style="font-size:40px; margin-bottom:16px;">👋</div>
-            <p style="font-size:18px; font-weight:600; color:#ff1493; margin-bottom:8px;">leaving already? ~</p>
-            <p style="font-size:14px; color:rgba(255,255,255,0.4); line-height:1.7;">
-                u sure about this? ur savings &amp; streak will be gone forever ~
-            </p>
-        </div>
-        <div class="card">
-            <div class="card-title">ur account</div>
-            <div style="display:flex; justify-content:space-around; text-align:center; padding:8px 0;">
-                <div><div class="mono pink" id="logout-balance">$0</div><div class="dim" style="font-size:10px; margin-top:4px;">SAVED</div></div>
-                <div><div class="mono pink" id="logout-streak">0</div><div class="dim" style="font-size:10px; margin-top:4px;">DAYS CLEAN</div></div>
-                <div><div class="mono" style="color:#ff4444;" id="logout-relapses">0</div><div class="dim" style="font-size:10px; margin-top:4px;">RELAPSES</div></div>
-            </div>
-        </div>
-        <button class="btn btn-danger" onclick="confirmLogout()">delete my account 💔</button>
-        <button class="btn btn-outline" onclick="showScreen('screen-hub')">nah take me back 💞</button>
-        <p class="dim center" style="font-size:11px; margin-top:12px;">u'll be back ~ they always come back 🤭</p>
     </div>
 
     <!-- BANK -->
@@ -417,7 +414,6 @@ function showScreen(id) {
     if (id==='screen-bank') updateBank();
     if (id==='screen-tracker') updateTracker();
     if (id==='screen-withdraw') updateWithdraw();
-    if (id==='screen-logout') updateLogout();
 }
 
 function showToast(msg) {
@@ -450,11 +446,26 @@ function tryLogin() {
 // Pre-test + Quiz
 let pretestName = '';
 let pretestUsername = '';
+let pretestPassword = '';
 function beginQuiz() {
     pretestUsername = document.getElementById('pretest-username').value.trim();
+    pretestPassword = document.getElementById('pretest-password').value;
     if(!pretestUsername){showToast('we need ur username ~ 🤭');return;}
+    if(!pretestPassword){showToast('u need a password ~ 🤭');return;}
     pretestName = pretestUsername;
     startQuiz();
+}
+function doLogin() {
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    if(!username||!password){showToast('fill in both fields ~ 🤭');return;}
+    api('/api/login',{username,password}).then(data=>{
+        if(data.error){showToast(data.error);return;}
+        state=data;
+        setAccountId(data.id);
+        showScreen('screen-hub');
+        showToast('welcome back ~ 💞');
+    });
 }
 function startQuiz() { quizStep=0; quizScore=0; showScreen('screen-quiz'); renderQuiz(); }
 function renderQuiz() {
@@ -481,7 +492,7 @@ function showResults() {
 // Account
 function createAccount() {
     const r=results.find(r=>quizScore>=r.min&&quizScore<=r.max)||results[results.length-1];
-    api('/api/account',{name:pretestName,username:pretestUsername,level:r.label,score:quizScore}).then(account=>{
+    api('/api/account',{name:pretestName,username:pretestUsername,password:pretestPassword,level:r.label,score:quizScore}).then(account=>{
         state=account;
         setAccountId(account.id);
         showScreen('screen-hub');
@@ -590,20 +601,7 @@ function updateWithdraw() {
     }
 }
 
-function updateLogout() {
-    if(!state)return;
-    document.getElementById('logout-balance').textContent='$'+(state.balance||0).toLocaleString();
-    document.getElementById('logout-streak').textContent=state.streak_days||0;
-    document.getElementById('logout-relapses').textContent=state.relapses||0;
-}
-
-function confirmLogout() {
-    if(state && state.id) apiDel('/api/account/'+state.id);
-    clearAccountId();
-    state=null;
-    showScreen('screen-landing');
-    showToast('account deleted ~ see u soon 🤭');
-}
+// no logout
 
 // Init
 document.getElementById('deposit-link').href=PAYMENT_URL;
