@@ -7,795 +7,550 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0a0a0f; color: #fff; min-height: 100vh; overflow-x: hidden; }
+        body::before { content:''; position:fixed; inset:0; background-image: linear-gradient(rgba(255,20,147,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,20,147,0.03) 1px, transparent 1px); background-size: 60px 60px; pointer-events:none; z-index:0; }
+        .container { max-width:520px; margin:0 auto; padding:20px; position:relative; z-index:1; }
+        
+        .header { text-align:center; padding:40px 0 20px; }
+        .header h1 { font-size:32px; font-weight:700; background:linear-gradient(135deg,#ff1493,#ff69b4); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .header .tagline { font-size:13px; color:rgba(255,255,255,0.35); margin-top:8px; letter-spacing:1px; }
+        
+        .screen { display:none; animation: fadeIn 0.4s ease; }
+        .screen.active { display:block; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        
+        .card { background:rgba(255,20,147,0.04); border:1px solid rgba(255,20,147,0.12); border-radius:16px; padding:24px; margin:14px 0; }
+        .card-title { font-size:12px; text-transform:uppercase; letter-spacing:2px; color:rgba(255,20,147,0.5); margin-bottom:14px; }
+        
+        .btn { display:block; width:100%; padding:14px; border:none; border-radius:12px; font-family:'Inter',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:all 0.3s; letter-spacing:0.5px; margin:8px 0; text-align:center; text-decoration:none; }
+        .btn-primary { background:linear-gradient(135deg,#ff1493,#ff69b4); color:#fff; box-shadow:0 4px 20px rgba(255,20,147,0.3); }
+        .btn-primary:hover { transform:translateY(-2px); box-shadow:0 6px 30px rgba(255,20,147,0.4); }
+        .btn-outline { background:transparent; color:#ff1493; border:1px solid rgba(255,20,147,0.3); }
+        .btn-outline:hover { background:rgba(255,20,147,0.08); }
+        .btn-danger { background:rgba(255,0,0,0.1); color:#ff4444; border:1px solid rgba(255,0,0,0.2); }
+        .btn-small { display:inline-block; width:auto; padding:10px 24px; font-size:13px; }
+        
+        .input-group { margin:12px 0; }
+        .input-group label { display:block; font-size:11px; text-transform:uppercase; letter-spacing:2px; color:rgba(255,255,255,0.35); margin-bottom:8px; }
+        .input-group input, .input-group select { width:100%; padding:12px 16px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,20,147,0.2); border-radius:10px; color:#fff; font-family:'Inter',sans-serif; font-size:15px; outline:none; transition:border-color 0.3s; }
+        .input-group input:focus, .input-group select:focus { border-color:#ff1493; }
+        .input-group select option { background:#1a1a2e; color:#fff; }
+        
+        .mono { font-family:'JetBrains Mono',monospace; }
+        .pink { color:#ff1493; }
+        .dim { color:rgba(255,255,255,0.3); }
+        .center { text-align:center; }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #0a0a0f;
-            color: #ffffff;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+        /* Quiz */
+        .quiz-question { font-size:18px; font-weight:500; margin-bottom:20px; line-height:1.5; }
+        .quiz-options { display:flex; flex-direction:column; gap:10px; }
+        .quiz-opt { padding:14px 18px; background:rgba(255,20,147,0.04); border:1px solid rgba(255,20,147,0.12); border-radius:12px; cursor:pointer; font-size:14px; color:rgba(255,255,255,0.7); transition:all 0.2s; display:flex; align-items:center; gap:12px; }
+        .quiz-opt:hover { background:rgba(255,20,147,0.1); border-color:rgba(255,20,147,0.3); color:#fff; }
+        .quiz-opt .opt-emoji { font-size:18px; }
+        .quiz-progress { display:flex; gap:6px; justify-content:center; margin:20px 0 30px; }
+        .quiz-dot { width:8px; height:8px; border-radius:50%; background:rgba(255,20,147,0.15); transition:all 0.3s; }
+        .quiz-dot.done { background:#ff1493; }
+        .quiz-dot.current { background:#ff1493; transform:scale(1.3); }
+        .quiz-counter { font-size:12px; color:rgba(255,255,255,0.2); text-align:center; letter-spacing:2px; margin-bottom:10px; }
 
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image: 
-                linear-gradient(rgba(255,20,147,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,20,147,0.03) 1px, transparent 1px);
-            background-size: 60px 60px;
-            pointer-events: none;
-            z-index: 0;
-        }
+        /* Results */
+        .result-score { font-family:'JetBrains Mono',monospace; font-size:64px; font-weight:700; color:#ff1493; text-shadow:0 0 60px rgba(255,20,147,0.4); }
+        .result-label { font-size:22px; font-weight:600; color:#ff1493; margin:8px 0; }
+        .result-desc { font-size:14px; color:rgba(255,255,255,0.45); line-height:1.7; margin:12px 0 24px; }
+        .result-bar-bg { width:100%; height:10px; background:rgba(255,255,255,0.05); border-radius:5px; overflow:hidden; margin:16px 0; }
+        .result-bar-fill { height:100%; border-radius:5px; transition:width 1.5s ease; background:linear-gradient(90deg,#ff69b4,#ff1493,#ff0000); }
 
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-            position: relative;
-            z-index: 1;
-        }
+        /* Hub */
+        .hub-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0; }
+        .hub-card { background:rgba(255,20,147,0.04); border:1px solid rgba(255,20,147,0.12); border-radius:14px; padding:20px; text-align:center; cursor:pointer; transition:all 0.3s; }
+        .hub-card:hover { background:rgba(255,20,147,0.08); border-color:rgba(255,20,147,0.3); transform:translateY(-2px); }
+        .hub-icon { font-size:28px; margin-bottom:8px; }
+        .hub-label { font-size:14px; font-weight:600; color:#ff1493; }
+        .hub-desc { font-size:11px; color:rgba(255,255,255,0.3); margin-top:6px; line-height:1.4; }
+        .hub-badge { display:inline-block; font-size:10px; padding:3px 8px; border-radius:4px; margin-top:8px; letter-spacing:1px; text-transform:uppercase; }
+        .badge-live { background:rgba(255,20,147,0.15); color:#ff1493; }
+        .badge-new { background:rgba(0,255,100,0.15); color:#00ff64; }
 
-        /* Header */
-        .header {
-            text-align: center;
-            padding: 40px 0 30px;
-        }
+        /* Bank styles */
+        .balance-amount { font-family:'JetBrains Mono',monospace; font-size:48px; font-weight:600; color:#ff1493; text-shadow:0 0 40px rgba(255,20,147,0.3); margin:8px 0; }
+        .streak-number { font-family:'JetBrains Mono',monospace; font-size:32px; font-weight:600; color:#ff1493; }
+        .streak-bar-bg { width:100%; height:6px; background:rgba(255,20,147,0.1); border-radius:3px; margin-top:12px; overflow:hidden; }
+        .streak-bar-fill { height:100%; background:linear-gradient(90deg,#ff1493,#ff69b4); border-radius:3px; transition:width 0.5s; }
+        .amount-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0; }
+        .amount-btn { padding:14px; background:rgba(255,20,147,0.06); border:1px solid rgba(255,20,147,0.15); border-radius:10px; color:#ff1493; font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; cursor:pointer; transition:all 0.2s; text-align:center; }
+        .amount-btn:hover,.amount-btn.selected { background:rgba(255,20,147,0.15); border-color:#ff1493; transform:scale(1.03); }
+        
+        .tx-list { list-style:none; max-height:180px; overflow-y:auto; }
+        .tx-item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px; }
+        .tx-type { font-size:10px; padding:3px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:1px; }
+        .tx-deposit { background:rgba(255,20,147,0.15); color:#ff1493; }
+        .tx-relapse { background:rgba(255,0,0,0.15); color:#ff4444; }
+        .tx-amount { font-family:'JetBrains Mono',monospace; font-weight:600; color:#ff1493; }
 
-        .logo-icon { font-size: 32px; margin-bottom: 10px; }
+        /* Relapse tracker */
+        .relapse-stat { text-align:center; padding:10px; }
+        .relapse-big { font-family:'JetBrains Mono',monospace; font-size:42px; font-weight:700; color:#ff4444; }
+        .relapse-calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin:16px 0; }
+        .cal-day { width:100%; aspect-ratio:1; border-radius:4px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,0.2); }
+        .cal-day.relapsed { background:rgba(255,0,0,0.2); border-color:rgba(255,0,0,0.3); }
+        .cal-day.clean { background:rgba(0,255,100,0.08); border-color:rgba(0,255,100,0.15); }
+        .cal-day.today { border-color:#ff1493; }
 
-        h1 {
-            font-size: 36px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #ff1493, #ff69b4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+        /* Toast */
+        .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-100px); background:rgba(255,20,147,0.9); color:#fff; padding:12px 24px; border-radius:10px; font-size:14px; font-weight:500; z-index:999; transition:transform 0.4s; backdrop-filter:blur(10px); }
+        .toast.show { transform:translateX(-50%) translateY(0); }
 
-        .tagline {
-            font-size: 14px;
-            font-weight: 300;
-            color: rgba(255,255,255,0.4);
-            margin-top: 8px;
-            letter-spacing: 1px;
-        }
+        /* Modal */
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:998; backdrop-filter:blur(4px); }
+        .modal-overlay.show { display:flex; }
+        .modal { background:#12121a; border:1px solid rgba(255,20,147,0.15); border-radius:16px; padding:28px; max-width:380px; width:90%; text-align:center; }
+        .modal h3 { font-size:20px; color:#ff1493; margin-bottom:12px; }
+        .modal p { font-size:14px; color:rgba(255,255,255,0.5); margin-bottom:20px; line-height:1.6; }
+        .modal-buttons { display:flex; gap:12px; }
+        .modal-buttons .btn { flex:1; }
 
-        /* Screens */
-        .screen { display: none; }
-        .screen.active { display: block; }
+        .fine-print { text-align:center; padding:30px 0; font-size:11px; color:rgba(255,255,255,0.12); line-height:1.8; }
+        .back-link { font-size:13px; color:rgba(255,20,147,0.4); cursor:pointer; text-align:center; display:block; margin:12px 0; }
+        .back-link:hover { color:#ff1493; }
 
-        /* Card style */
-        .card {
-            background: rgba(255,20,147,0.04);
-            border: 1px solid rgba(255,20,147,0.12);
-            border-radius: 16px;
-            padding: 28px;
-            margin: 16px 0;
-        }
-
-        .card-title {
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: rgba(255,20,147,0.5);
-            margin-bottom: 16px;
-        }
-
-        /* Balance display */
-        .balance {
-            text-align: center;
-            padding: 20px 0;
-        }
-
-        .balance-label {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            color: rgba(255,255,255,0.3);
-        }
-
-        .balance-amount {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 52px;
-            font-weight: 600;
-            color: #ff1493;
-            margin: 8px 0;
-            text-shadow: 0 0 40px rgba(255,20,147,0.3);
-        }
-
-        .balance-sub {
-            font-size: 12px;
-            color: rgba(255,255,255,0.3);
-        }
-
-        /* Streak */
-        .streak-display {
-            text-align: center;
-            padding: 16px 0;
-        }
-
-        .streak-number {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 36px;
-            font-weight: 600;
-            color: #ff1493;
-        }
-
-        .streak-label {
-            font-size: 12px;
-            color: rgba(255,255,255,0.3);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 4px;
-        }
-
-        .streak-bar-bg {
-            width: 100%;
-            height: 6px;
-            background: rgba(255,20,147,0.1);
-            border-radius: 3px;
-            margin-top: 16px;
-            overflow: hidden;
-        }
-
-        .streak-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ff1493, #ff69b4);
-            border-radius: 3px;
-            transition: width 0.5s ease;
-        }
-
-        .streak-target {
-            display: flex;
-            justify-content: space-between;
-            font-size: 11px;
-            color: rgba(255,255,255,0.2);
-            margin-top: 6px;
-        }
-
-        /* Buttons */
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 12px;
-            font-family: 'Inter', sans-serif;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            letter-spacing: 0.5px;
-            margin: 8px 0;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #ff1493, #ff69b4);
-            color: white;
-            box-shadow: 0 4px 20px rgba(255,20,147,0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 30px rgba(255,20,147,0.4);
-        }
-
-        .btn-outline {
-            background: transparent;
-            color: #ff1493;
-            border: 1px solid rgba(255,20,147,0.3);
-        }
-
-        .btn-outline:hover {
-            background: rgba(255,20,147,0.08);
-        }
-
-        .btn-danger {
-            background: rgba(255,0,0,0.1);
-            color: #ff4444;
-            border: 1px solid rgba(255,0,0,0.2);
-        }
-
-        .btn-danger:hover {
-            background: rgba(255,0,0,0.2);
-        }
-
-        .btn-small {
-            display: inline-block;
-            width: auto;
-            padding: 8px 20px;
-            font-size: 13px;
-        }
-
-        /* Input */
-        .input-group {
-            margin: 12px 0;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: rgba(255,255,255,0.4);
-            margin-bottom: 8px;
-        }
-
-        .input-group input, .input-group select {
-            width: 100%;
-            padding: 12px 16px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,20,147,0.2);
-            border-radius: 10px;
-            color: white;
-            font-family: 'Inter', sans-serif;
-            font-size: 15px;
-            outline: none;
-            transition: border-color 0.3s;
-        }
-
-        .input-group input:focus, .input-group select:focus {
-            border-color: #ff1493;
-        }
-
-        .input-group select option {
-            background: #1a1a2e;
-            color: white;
-        }
-
-        /* Transaction list */
-        .tx-list {
-            list-style: none;
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .tx-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-size: 13px;
-        }
-
-        .tx-item:last-child { border: none; }
-
-        .tx-amount {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 600;
-            color: #ff1493;
-        }
-
-        .tx-date {
-            color: rgba(255,255,255,0.3);
-            font-size: 11px;
-        }
-
-        .tx-type {
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .tx-deposit { background: rgba(255,20,147,0.15); color: #ff1493; }
-        .tx-relapse { background: rgba(255,0,0,0.15); color: #ff4444; }
-
-        /* Deposit amounts */
-        .amount-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin: 16px 0;
-        }
-
-        .amount-btn {
-            padding: 14px;
-            background: rgba(255,20,147,0.06);
-            border: 1px solid rgba(255,20,147,0.15);
-            border-radius: 10px;
-            color: #ff1493;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-        }
-
-        .amount-btn:hover, .amount-btn.selected {
-            background: rgba(255,20,147,0.15);
-            border-color: #ff1493;
-            transform: scale(1.03);
-        }
-
-        /* Stats row */
-        .stats-row {
-            display: flex;
-            justify-content: space-around;
-            text-align: center;
-            padding: 16px 0;
-        }
-
-        .mini-stat-num {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 20px;
-            font-weight: 600;
-            color: #ff1493;
-        }
-
-        .mini-stat-label {
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: rgba(255,255,255,0.3);
-            margin-top: 4px;
-        }
-
-        /* Toast notification */
-        .toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(-100px);
-            background: rgba(255,20,147,0.9);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 999;
-            transition: transform 0.4s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .toast.show { transform: translateX(-50%) translateY(0); }
-
-        /* Relapse modal */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 998;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-overlay.show { display: flex; }
-
-        .modal {
-            background: #12121a;
-            border: 1px solid rgba(255,0,0,0.2);
-            border-radius: 16px;
-            padding: 32px;
-            max-width: 380px;
-            width: 90%;
-            text-align: center;
-        }
-
-        .modal h3 {
-            font-size: 20px;
-            color: #ff4444;
-            margin-bottom: 12px;
-        }
-
-        .modal p {
-            font-size: 14px;
-            color: rgba(255,255,255,0.5);
-            margin-bottom: 24px;
-            line-height: 1.6;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 12px;
-        }
-
-        .modal-buttons .btn { flex: 1; }
-
-        /* Fine print */
-        .fine-print {
-            text-align: center;
-            padding: 30px 0;
-            font-size: 11px;
-            color: rgba(255,255,255,0.15);
-            line-height: 1.8;
-        }
-
-        /* Withdraw section */
-        .withdraw-status {
-            text-align: center;
-            padding: 20px;
-        }
-
-        .withdraw-locked {
-            font-size: 40px;
-            margin-bottom: 12px;
-        }
-
-        .withdraw-msg {
-            font-size: 14px;
-            color: rgba(255,255,255,0.4);
-            line-height: 1.6;
-        }
-
-        .withdraw-msg span {
-            color: #ff1493;
-            font-weight: 600;
-        }
-
-        @media (max-width: 500px) {
-            .balance-amount { font-size: 40px; }
-            h1 { font-size: 28px; }
-            .amount-grid { grid-template-columns: repeat(2, 1fr); }
-        }
+        @media (max-width:500px) { .header h1{font-size:26px;} .balance-amount{font-size:36px;} .result-score{font-size:48px;} .hub-grid{gap:8px;} .hub-card{padding:16px;} }
     </style>
 </head>
 <body>
 
-    <div class="toast" id="toast"></div>
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="relapseModal">
+    <div class="modal">
+        <h3>relapse? 🤭</h3>
+        <p>this resets ur clean streak to 0 ~ ur deposits stay but the 30-day clock starts over ~</p>
+        <div class="modal-buttons">
+            <button class="btn btn-outline" onclick="closeModal()">nah i'm good</button>
+            <button class="btn btn-danger" onclick="confirmRelapse()">i relapsed 💔</button>
+        </div>
+    </div>
+</div>
 
-    <div class="modal-overlay" id="relapseModal">
-        <div class="modal">
-            <h3>relapse? 🤭</h3>
-            <p>this will reset ur clean streak back to 0 days ~ ur balance stays but the 30-day clock starts over ~</p>
-            <div class="modal-buttons">
-                <button class="btn btn-outline" onclick="closeModal()">nah i'm good</button>
-                <button class="btn btn-danger" onclick="confirmRelapse()">i relapsed 💔</button>
-            </div>
+<div class="container">
+    <div class="header">
+        <h1>bank4addicts</h1>
+        <p class="tagline">ur money is safer with us than with u ~</p>
+    </div>
+
+    <!-- LANDING -->
+    <div class="screen active" id="screen-landing">
+        <div class="card center">
+            <p style="font-size:36px; margin-bottom:12px;">🏦</p>
+            <p style="font-size:16px; color:rgba(255,255,255,0.6); line-height:1.7;">
+                not sure if u have a problem? ~<br>
+                take the test &amp; find out 💞
+            </p>
+        </div>
+        <button class="btn btn-primary" onclick="startQuiz()">take the addiction test 🤭</button>
+        <button class="btn btn-outline" onclick="tryLogin()">i already have an account</button>
+        <div class="fine-print">
+            withdrawal success rate: 0% ~ maybe u'll be the first 🤭
         </div>
     </div>
 
-    <div class="container">
-
-        <div class="header">
-            <div class="logo-icon">🏦</div>
-            <h1>bank4addicts</h1>
-            <p class="tagline">ur money is safer with us than with u ~</p>
+    <!-- QUIZ -->
+    <div class="screen" id="screen-quiz">
+        <div class="quiz-progress" id="quiz-dots"></div>
+        <div class="quiz-counter" id="quiz-counter"></div>
+        <div class="card">
+            <p class="quiz-question" id="quiz-q"></p>
+            <div class="quiz-options" id="quiz-opts"></div>
         </div>
-
-        <!-- SCREEN: Welcome -->
-        <div class="screen active" id="screen-welcome">
-            <div class="card">
-                <div class="card-title">how it works ~</div>
-                <div class="steps-mini">
-                    <p style="color:rgba(255,255,255,0.5); font-size:14px; line-height:2;">
-                        💞 open an account<br>
-                        💞 deposit ur money instead of spending it on findom<br>
-                        💞 stay clean for 30 days<br>
-                        💞 withdraw everything back<br>
-                    </p>
-                    <p style="color:rgba(255,20,147,0.5); font-size:13px; margin-top:12px; font-style:italic;">
-                        current withdrawal success rate: 0% 🤭
-                    </p>
-                </div>
-            </div>
-
-            <button class="btn btn-primary" onclick="showScreen('screen-signup')">open an account 💞</button>
-            <button class="btn btn-outline" onclick="tryLogin()">i already have one</button>
-        </div>
-
-        <!-- SCREEN: Signup -->
-        <div class="screen" id="screen-signup">
-            <div class="card">
-                <div class="card-title">open account ~</div>
-                <div class="input-group">
-                    <label>what should we call u</label>
-                    <input type="text" id="signup-name" placeholder="ur name or handle ~">
-                </div>
-                <div class="input-group">
-                    <label>how bad is it (be honest)</label>
-                    <select id="signup-level">
-                        <option value="mild">mild ~ i can still control it (sure u can)</option>
-                        <option value="moderate">moderate ~ it's getting worse</option>
-                        <option value="severe" selected>severe ~ i need help</option>
-                        <option value="terminal">terminal ~ i've accepted it</option>
-                    </select>
-                </div>
-            </div>
-            <button class="btn btn-primary" onclick="createAccount()">create account 💞</button>
-            <button class="btn btn-outline" onclick="showScreen('screen-welcome')">back</button>
-        </div>
-
-        <!-- SCREEN: Dashboard -->
-        <div class="screen" id="screen-dashboard">
-            <div class="card">
-                <p style="font-size:13px; color:rgba(255,255,255,0.3);">welcome back ~</p>
-                <p style="font-size:18px; font-weight:600; color:#ff1493; margin-top:4px;" id="dash-name"></p>
-                
-                <div class="balance">
-                    <div class="balance-label">total saved</div>
-                    <div class="balance-amount" id="dash-balance">$0</div>
-                    <div class="balance-sub" id="dash-deposits">0 deposits</div>
-                </div>
-
-                <div class="streak-display">
-                    <div class="streak-number" id="dash-streak">0</div>
-                    <div class="streak-label">days clean</div>
-                    <div class="streak-bar-bg">
-                        <div class="streak-bar-fill" id="dash-streak-bar" style="width:0%"></div>
-                    </div>
-                    <div class="streak-target">
-                        <span>day 0</span>
-                        <span>day 30 — withdraw 💞</span>
-                    </div>
-                </div>
-            </div>
-
-            <button class="btn btn-primary" onclick="showScreen('screen-deposit')">deposit 💞</button>
-            <button class="btn btn-outline" onclick="showScreen('screen-withdraw')">withdraw</button>
-            <button class="btn btn-danger" onclick="openRelapseModal()" style="margin-top:4px;">i relapsed 💔</button>
-
-            <div class="card" style="margin-top:20px;">
-                <div class="card-title">transaction history</div>
-                <ul class="tx-list" id="tx-list">
-                    <li class="tx-item" style="color:rgba(255,255,255,0.2); font-style:italic;">no transactions yet ~</li>
-                </ul>
-            </div>
-
-            <div class="fine-print">
-                bank4addicts ~ ur money is safer with us 💞<br>
-                all deposits are final until the 30-day clean condition is met ~
-            </div>
-        </div>
-
-        <!-- SCREEN: Deposit -->
-        <div class="screen" id="screen-deposit">
-            <div class="card">
-                <div class="card-title">make a deposit ~</div>
-                <p style="font-size:13px; color:rgba(255,255,255,0.4); margin-bottom:16px;">
-                    choose an amount ~ send it to us instead of spending it on findom 💞
-                </p>
-
-                <div class="amount-grid">
-                    <div class="amount-btn" onclick="selectAmount(10)">$10</div>
-                    <div class="amount-btn" onclick="selectAmount(25)">$25</div>
-                    <div class="amount-btn" onclick="selectAmount(50)">$50</div>
-                    <div class="amount-btn" onclick="selectAmount(100)">$100</div>
-                    <div class="amount-btn" onclick="selectAmount(200)">$200</div>
-                    <div class="amount-btn" onclick="selectAmount(500)">$500</div>
-                </div>
-
-                <div class="input-group">
-                    <label>or enter custom amount</label>
-                    <input type="number" id="custom-amount" placeholder="$0" min="1">
-                </div>
-            </div>
-
-            <a id="deposit-link" href="#" target="_blank" class="btn btn-primary" style="text-align:center; text-decoration:none;">send deposit 💞</a>
-            <button class="btn btn-outline" onclick="showScreen('screen-dashboard')">back</button>
-        </div>
-
-        <!-- SCREEN: Withdraw -->
-        <div class="screen" id="screen-withdraw">
-            <div class="card">
-                <div class="card-title">withdraw funds</div>
-                <div class="withdraw-status" id="withdraw-status">
-                    <div class="withdraw-locked">🔒</div>
-                    <p class="withdraw-msg">
-                        u need <span id="days-remaining">30</span> more clean days to unlock withdrawals 💞<br><br>
-                        <span style="font-size:12px; color:rgba(255,255,255,0.2);">
-                            maybe u'll be the first one to make it ~ 🤭
-                        </span>
-                    </p>
-                </div>
-            </div>
-            <button class="btn btn-outline" onclick="showScreen('screen-dashboard')">back</button>
-        </div>
-
     </div>
 
-    <script>
-        let state = null;
-        let selectedAmount = 0;
+    <!-- RESULTS -->
+    <div class="screen" id="screen-results">
+        <div class="card center">
+            <p class="dim" style="font-size:12px; letter-spacing:3px; text-transform:uppercase; margin-bottom:12px;">ur addiction score</p>
+            <div class="result-score" id="res-score">0</div>
+            <div class="result-bar-bg"><div class="result-bar-fill" id="res-bar" style="width:0%"></div></div>
+            <div class="result-label" id="res-label"></div>
+            <p class="result-desc" id="res-desc"></p>
+        </div>
+        <button class="btn btn-primary" onclick="showScreen('screen-signup')">open an account 💞</button>
+        <p class="back-link" onclick="startQuiz()">retake test</p>
+    </div>
 
-        // Throne URL for deposits — change this to your payment link
-        const PAYMENT_URL = 'https://throne.com/bank4addicts';
+    <!-- SIGNUP -->
+    <div class="screen" id="screen-signup">
+        <div class="card">
+            <div class="card-title">open account ~</div>
+            <div class="input-group">
+                <label>what should we call u</label>
+                <input type="text" id="signup-name" placeholder="ur name or handle ~">
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="createAccount()">create account 💞</button>
+        <p class="back-link" onclick="showScreen('screen-results')">back</p>
+    </div>
 
-        function loadState() {
-            const saved = localStorage.getItem('bank4addicts');
-            if (saved) {
-                state = JSON.parse(saved);
-                // Calculate streak
-                if (state.lastCleanDate) {
-                    const now = new Date();
-                    const last = new Date(state.lastCleanDate);
-                    state.streakDays = Math.floor((now - last) / (1000 * 60 * 60 * 24));
-                }
-            }
-            return state;
-        }
+    <!-- HUB -->
+    <div class="screen" id="screen-hub">
+        <div class="card center">
+            <p style="font-size:13px; color:rgba(255,255,255,0.3);">logged in as</p>
+            <p style="font-size:18px; font-weight:600; color:#ff1493;" id="hub-name"></p>
+            <p class="dim" style="font-size:12px; margin-top:4px;" id="hub-level"></p>
+        </div>
 
-        function saveState() {
-            localStorage.setItem('bank4addicts', JSON.stringify(state));
-        }
+        <div class="hub-grid">
+            <div class="hub-card" onclick="showScreen('screen-bank')">
+                <div class="hub-icon">🏦</div>
+                <div class="hub-label">savings</div>
+                <div class="hub-desc">deposit ur money ~ get it back when u quit</div>
+                <div class="hub-badge badge-live">live</div>
+            </div>
+            <div class="hub-card" onclick="showScreen('screen-tracker')">
+                <div class="hub-icon">📊</div>
+                <div class="hub-label">relapse tracker</div>
+                <div class="hub-desc">log &amp; track ur relapses ~ see the pattern</div>
+                <div class="hub-badge badge-live">live</div>
+            </div>
+            <div class="hub-card" onclick="window.open('https://twitter.com/messages/compose?recipient_id=RECIPIENT_ID&text=i%20need%20rehab','_blank')">
+                <div class="hub-icon">💊</div>
+                <div class="hub-label">rehab</div>
+                <div class="hub-desc">1-on-1 help ~ DM to enroll</div>
+                <div class="hub-badge badge-new">dm</div>
+            </div>
+            <div class="hub-card" onclick="window.open('https://conditioning.vercel.app','_blank')">
+                <div class="hub-icon">🧠</div>
+                <div class="hub-label">conditioning</div>
+                <div class="hub-desc">go deeper ~ if u dare</div>
+                <div class="hub-badge badge-new">enter</div>
+            </div>
+        </div>
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+        <div class="card">
+            <div class="card-title">ur stats</div>
+            <div style="display:flex; justify-content:space-around; text-align:center; padding:8px 0;">
+                <div><div class="mono pink" style="font-size:20px;" id="hub-balance">$0</div><div class="dim" style="font-size:10px; letter-spacing:2px; margin-top:4px;">SAVED</div></div>
+                <div><div class="mono pink" style="font-size:20px;" id="hub-streak">0</div><div class="dim" style="font-size:10px; letter-spacing:2px; margin-top:4px;">DAYS CLEAN</div></div>
+                <div><div class="mono" style="font-size:20px; color:#ff4444;" id="hub-relapses">0</div><div class="dim" style="font-size:10px; letter-spacing:2px; margin-top:4px;">RELAPSES</div></div>
+            </div>
+        </div>
 
-            if (id === 'screen-dashboard') updateDashboard();
-            if (id === 'screen-withdraw') updateWithdraw();
-        }
+        <div class="fine-print">bank4addicts ~ est. 2026 💞</div>
+    </div>
 
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000);
-        }
+    <!-- BANK -->
+    <div class="screen" id="screen-bank">
+        <p class="back-link" onclick="showScreen('screen-hub')">← back to hub</p>
+        <div class="card center">
+            <div class="card-title">savings account</div>
+            <div style="font-size:11px; letter-spacing:3px; color:rgba(255,255,255,0.2); text-transform:uppercase;">total saved</div>
+            <div class="balance-amount" id="bank-balance">$0</div>
+            <div class="dim" style="font-size:12px;" id="bank-deposits">0 deposits</div>
 
-        function tryLogin() {
-            if (loadState()) {
-                showScreen('screen-dashboard');
-                showToast('welcome back ~ 💞');
-            } else {
-                showToast('no account found ~ open one first 🤭');
-            }
-        }
+            <div style="margin-top:20px;">
+                <div class="streak-number" id="bank-streak">0</div>
+                <div class="dim" style="font-size:11px; letter-spacing:2px; text-transform:uppercase; margin-top:4px;">days clean</div>
+                <div class="streak-bar-bg"><div class="streak-bar-fill" id="bank-streak-bar" style="width:0%"></div></div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:rgba(255,255,255,0.15); margin-top:4px;">
+                    <span>day 0</span><span>day 30 — withdraw 💞</span>
+                </div>
+            </div>
+        </div>
 
-        function createAccount() {
-            const name = document.getElementById('signup-name').value.trim();
-            const level = document.getElementById('signup-level').value;
+        <button class="btn btn-primary" onclick="showScreen('screen-deposit')">deposit 💞</button>
+        <button class="btn btn-outline" onclick="showScreen('screen-withdraw')">withdraw</button>
+        <button class="btn btn-danger" onclick="openRelapseModal()">i relapsed 💔</button>
 
-            if (!name) {
-                showToast('u need a name ~ 🤭');
-                return;
-            }
+        <div class="card" style="margin-top:16px;">
+            <div class="card-title">history</div>
+            <ul class="tx-list" id="tx-list"></ul>
+        </div>
+    </div>
 
-            state = {
-                name: name,
-                level: level,
-                balance: 0,
-                deposits: 0,
-                relapses: 0,
-                streakDays: 0,
-                lastCleanDate: new Date().toISOString(),
-                transactions: [],
-                created: new Date().toISOString()
-            };
+    <!-- DEPOSIT -->
+    <div class="screen" id="screen-deposit">
+        <p class="back-link" onclick="showScreen('screen-bank')">← back</p>
+        <div class="card">
+            <div class="card-title">make a deposit ~</div>
+            <p style="font-size:13px; color:rgba(255,255,255,0.35); margin-bottom:14px;">choose an amount ~ send it to us instead of wasting it 💞</p>
+            <div class="amount-grid">
+                <div class="amount-btn" onclick="selectAmount(10,this)">$10</div>
+                <div class="amount-btn" onclick="selectAmount(25,this)">$25</div>
+                <div class="amount-btn" onclick="selectAmount(50,this)">$50</div>
+                <div class="amount-btn" onclick="selectAmount(100,this)">$100</div>
+                <div class="amount-btn" onclick="selectAmount(200,this)">$200</div>
+                <div class="amount-btn" onclick="selectAmount(500,this)">$500</div>
+            </div>
+            <div class="input-group">
+                <label>custom amount</label>
+                <input type="number" id="custom-amount" placeholder="$0" min="1">
+            </div>
+        </div>
+        <a id="deposit-link" href="#" target="_blank" class="btn btn-primary" style="text-decoration:none;" onclick="recordDeposit()">send deposit 💞</a>
+    </div>
 
-            saveState();
-            showScreen('screen-dashboard');
-            showToast('account opened ~ good luck 💞');
-        }
+    <!-- WITHDRAW -->
+    <div class="screen" id="screen-withdraw">
+        <p class="back-link" onclick="showScreen('screen-bank')">← back</p>
+        <div class="card center" id="withdraw-card">
+            <div style="font-size:48px; margin-bottom:12px;">🔒</div>
+            <p style="font-size:14px; color:rgba(255,255,255,0.4); line-height:1.7;">
+                u need <span class="pink mono" id="days-remaining">30</span> more clean days to unlock 💞<br><br>
+                <span class="dim" style="font-size:12px;">maybe u'll be the first ~ 🤭</span>
+            </p>
+        </div>
+    </div>
 
-        function updateDashboard() {
-            if (!state) return;
+    <!-- RELAPSE TRACKER -->
+    <div class="screen" id="screen-tracker">
+        <p class="back-link" onclick="showScreen('screen-hub')">← back to hub</p>
+        <div class="card center">
+            <div class="card-title">relapse tracker</div>
+            <div class="relapse-big" id="tracker-total">0</div>
+            <div class="dim" style="font-size:11px; letter-spacing:2px; text-transform:uppercase; margin-top:4px;">total relapses</div>
+        </div>
 
-            document.getElementById('dash-name').textContent = state.name + ' ~';
-            document.getElementById('dash-balance').textContent = '$' + state.balance.toLocaleString();
-            document.getElementById('dash-deposits').textContent = state.deposits + ' deposit' + (state.deposits !== 1 ? 's' : '');
-            document.getElementById('dash-streak').textContent = state.streakDays;
+        <div class="card">
+            <div class="card-title">last 28 days</div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span class="dim" style="font-size:10px;">M</span><span class="dim" style="font-size:10px;">T</span><span class="dim" style="font-size:10px;">W</span><span class="dim" style="font-size:10px;">T</span><span class="dim" style="font-size:10px;">F</span><span class="dim" style="font-size:10px;">S</span><span class="dim" style="font-size:10px;">S</span>
+            </div>
+            <div class="relapse-calendar" id="tracker-calendar"></div>
+            <div style="display:flex; justify-content:center; gap:16px; margin-top:12px;">
+                <span class="dim" style="font-size:10px;">🟥 relapsed</span>
+                <span class="dim" style="font-size:10px;">🟩 clean</span>
+            </div>
+        </div>
 
-            const pct = Math.min((state.streakDays / 30) * 100, 100);
-            document.getElementById('dash-streak-bar').style.width = pct + '%';
+        <div class="card center">
+            <div class="card-title">stats</div>
+            <div style="display:flex; justify-content:space-around;">
+                <div><div class="mono pink" id="tracker-streak">0</div><div class="dim" style="font-size:10px; margin-top:4px;">CURRENT STREAK</div></div>
+                <div><div class="mono pink" id="tracker-best">0</div><div class="dim" style="font-size:10px; margin-top:4px;">BEST STREAK</div></div>
+                <div><div class="mono" style="color:#ff4444;" id="tracker-weekly">0</div><div class="dim" style="font-size:10px; margin-top:4px;">THIS WEEK</div></div>
+            </div>
+        </div>
 
-            // Render transactions
-            const list = document.getElementById('tx-list');
-            if (state.transactions.length === 0) {
-                list.innerHTML = '<li class="tx-item" style="color:rgba(255,255,255,0.2); font-style:italic;">no transactions yet ~</li>';
-            } else {
-                list.innerHTML = state.transactions.slice().reverse().map(tx => {
-                    const d = new Date(tx.date);
-                    const dateStr = d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' });
-                    if (tx.type === 'deposit') {
-                        return `<li class="tx-item">
-                            <span><span class="tx-type tx-deposit">deposit</span></span>
-                            <span class="tx-date">${dateStr}</span>
-                            <span class="tx-amount">+$${tx.amount}</span>
-                        </li>`;
-                    } else {
-                        return `<li class="tx-item">
-                            <span><span class="tx-type tx-relapse">relapse</span></span>
-                            <span class="tx-date">${dateStr}</span>
-                            <span class="tx-amount" style="color:#ff4444;">streak reset</span>
-                        </li>`;
-                    }
-                }).join('');
-            }
-        }
+        <button class="btn btn-danger" onclick="logRelapse()">log relapse 💔</button>
+        <p class="dim center" style="font-size:11px; margin-top:8px;">be honest with urself ~</p>
+    </div>
 
-        function selectAmount(amt) {
-            selectedAmount = amt;
-            document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
-            event.target.classList.add('selected');
-            document.getElementById('custom-amount').value = '';
-            updateDepositLink();
-        }
+</div>
 
-        function updateDepositLink() {
-            const custom = parseInt(document.getElementById('custom-amount').value) || 0;
-            const amount = custom || selectedAmount;
-            // Link to payment - modify as needed
-            document.getElementById('deposit-link').href = PAYMENT_URL;
-            document.getElementById('deposit-link').onclick = function(e) {
-                if (amount <= 0) {
-                    e.preventDefault();
-                    showToast('pick an amount first ~ 🤭');
-                    return;
-                }
-                recordDeposit(amount);
-            };
-        }
+<script>
+const PAYMENT_URL = 'https://throne.com/bank4addicts';
+let state = null;
+let selectedAmount = 0;
+let quizStep = 0;
+let quizScore = 0;
 
-        document.getElementById('custom-amount').addEventListener('input', function() {
-            selectedAmount = 0;
-            document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
-            updateDepositLink();
-        });
+const questions = [
+    { q: "how often do u relapse? ~", opts: [
+        { text: "once a month maybe", emoji: "😅", score: 1 },
+        { text: "a few times a week", emoji: "😬", score: 2 },
+        { text: "daily", emoji: "💀", score: 3 },
+        { text: "multiple times a day", emoji: "🧠", score: 4 }
+    ]},
+    { q: "how much have u spent in the last month? ~", opts: [
+        { text: "less than $50", emoji: "💵", score: 1 },
+        { text: "$50 - $200", emoji: "💸", score: 2 },
+        { text: "$200 - $500", emoji: "🔥", score: 3 },
+        { text: "i'm scared to check", emoji: "💀", score: 4 }
+    ]},
+    { q: "have u tried to quit before? ~", opts: [
+        { text: "never needed to", emoji: "😇", score: 0 },
+        { text: "once or twice", emoji: "🤔", score: 1 },
+        { text: "lost count", emoji: "😩", score: 3 },
+        { text: "i've given up trying", emoji: "💔", score: 4 }
+    ]},
+    { q: "do the people in ur life know? ~", opts: [
+        { text: "yeah they know", emoji: "👥", score: 0 },
+        { text: "some of them", emoji: "🤫", score: 1 },
+        { text: "absolutely not", emoji: "🙈", score: 3 },
+        { text: "i'd rather die", emoji: "💀", score: 4 }
+    ]},
+    { q: "can u go 24 hours without? ~", opts: [
+        { text: "easily", emoji: "💪", score: 0 },
+        { text: "if i really try", emoji: "😤", score: 1 },
+        { text: "probably not", emoji: "😬", score: 3 },
+        { text: "lol", emoji: "🤭", score: 4 }
+    ]},
+    { q: "what time is it right now? ~", opts: [
+        { text: "daytime", emoji: "☀️", score: 0 },
+        { text: "evening", emoji: "🌙", score: 1 },
+        { text: "past midnight", emoji: "🌑", score: 3 },
+        { text: "i don't even know anymore", emoji: "💀", score: 4 }
+    ]},
+    { q: "why are u taking this test? ~", opts: [
+        { text: "just curious", emoji: "🤷", score: 0 },
+        { text: "someone sent it to me", emoji: "📱", score: 1 },
+        { text: "i think i have a problem", emoji: "😔", score: 3 },
+        { text: "i know i have a problem", emoji: "💞", score: 4 }
+    ]}
+];
 
-        function recordDeposit(amount) {
-            state.balance += amount;
-            state.deposits++;
-            state.transactions.push({
-                type: 'deposit',
-                amount: amount,
-                date: new Date().toISOString()
-            });
-            saveState();
-            showToast('$' + amount + ' deposited ~ 💞');
-            setTimeout(() => showScreen('screen-dashboard'), 500);
-        }
+const results = [
+    { min:0, max:6, label:"casual user ~", desc:"u're fine... for now 🤭 but u're here for a reason ~ check back in a month and see if ur score went up ~ (it will)", pct:15 },
+    { min:7, max:12, label:"slipping ~", desc:"u're not addicted yet but u're heading there fast 💞 the fact that u took this test means part of u already knows ~", pct:35 },
+    { min:13, max:19, label:"addicted ~", desc:"u're past the point of 'i can stop whenever i want' 🤭 u can't ~ ur brain has already rewired itself around this ~ u need help ~", pct:65 },
+    { min:20, max:28, label:"cooked 💀", desc:"u are DEEP 💞 u probably knew the result before u even started ~ the good news? bank4addicts was literally built for people like u ~ open an account before it gets worse ~ (it will)", pct:92 }
+];
 
-        function openRelapseModal() {
-            document.getElementById('relapseModal').classList.add('show');
-        }
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (id==='screen-hub') updateHub();
+    if (id==='screen-bank') updateBank();
+    if (id==='screen-tracker') updateTracker();
+    if (id==='screen-withdraw') updateWithdraw();
+}
 
-        function closeModal() {
-            document.getElementById('relapseModal').classList.remove('show');
-        }
+function showToast(msg) {
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),3000);
+}
 
-        function confirmRelapse() {
-            state.relapses++;
-            state.streakDays = 0;
-            state.lastCleanDate = new Date().toISOString();
-            state.transactions.push({
-                type: 'relapse',
-                date: new Date().toISOString()
-            });
-            saveState();
-            closeModal();
-            updateDashboard();
+function loadState() {
+    const s=localStorage.getItem('bank4addicts');
+    if(s){state=JSON.parse(s); calcStreak();} return state;
+}
+function saveState() { localStorage.setItem('bank4addicts',JSON.stringify(state)); }
+function calcStreak() {
+    if(state&&state.lastCleanDate){ const now=new Date(),last=new Date(state.lastCleanDate); state.streakDays=Math.floor((now-last)/(1000*60*60*24)); }
+}
+function tryLogin() { if(loadState()){showScreen('screen-hub');showToast('welcome back ~ 💞');}else{showToast('no account found ~ take the test first 🤭');} }
 
-            const msgs = [
-                'streak reset ~ see u tomorrow 🤭',
-                'day 0 again ~ we both knew this would happen 💞',
-                'there it is ~ clock starts over 🤭',
-                'u lasted ' + state.streakDays + ' days ~ new record? probably not 💞',
-                'maybe next time ~ (there\'s always a next time) 🤭'
-            ];
-            showToast(msgs[Math.floor(Math.random() * msgs.length)]);
-        }
+// Quiz
+function startQuiz() { quizStep=0; quizScore=0; showScreen('screen-quiz'); renderQuiz(); }
+function renderQuiz() {
+    const q=questions[quizStep];
+    document.getElementById('quiz-q').textContent=q.q;
+    document.getElementById('quiz-counter').textContent=`${quizStep+1} / ${questions.length}`;
+    let dots=''; for(let i=0;i<questions.length;i++) dots+=`<div class="quiz-dot ${i<quizStep?'done':''} ${i===quizStep?'current':''}"></div>`;
+    document.getElementById('quiz-dots').innerHTML=dots;
+    document.getElementById('quiz-opts').innerHTML=q.opts.map((o,i)=>`<div class="quiz-opt" onclick="answerQuiz(${o.score})"><span class="opt-emoji">${o.emoji}</span>${o.text}</div>`).join('');
+}
+function answerQuiz(score) {
+    quizScore+=score; quizStep++;
+    if(quizStep>=questions.length){showResults();}else{renderQuiz();}
+}
+function showResults() {
+    showScreen('screen-results');
+    const r=results.find(r=>quizScore>=r.min&&quizScore<=r.max)||results[results.length-1];
+    document.getElementById('res-score').textContent=quizScore;
+    document.getElementById('res-label').textContent=r.label;
+    document.getElementById('res-desc').textContent=r.desc;
+    setTimeout(()=>{document.getElementById('res-bar').style.width=r.pct+'%';},200);
+}
 
-        function updateWithdraw() {
-            const remaining = Math.max(0, 30 - (state?.streakDays || 0));
-            document.getElementById('days-remaining').textContent = remaining;
+// Account
+function createAccount() {
+    const name=document.getElementById('signup-name').value.trim();
+    if(!name){showToast('u need a name ~ 🤭');return;}
+    const r=results.find(r=>quizScore>=r.min&&quizScore<=r.max)||results[results.length-1];
+    state={name,level:r.label,score:quizScore,balance:0,deposits:0,relapses:0,streakDays:0,bestStreak:0,lastCleanDate:new Date().toISOString(),transactions:[],relapseDates:[],created:new Date().toISOString()};
+    saveState(); showScreen('screen-hub'); showToast('account opened ~ good luck 💞');
+}
 
-            if (remaining <= 0) {
-                document.getElementById('withdraw-status').innerHTML = `
-                    <div class="withdraw-locked" style="font-size:48px;">🤯</div>
-                    <p class="withdraw-msg">
-                        wait... u actually made it to 30 days?? 💞<br><br>
-                        <span style="color:#ff1493;">DM @bank4addicts on Twitter to arrange ur withdrawal ~</span><br><br>
-                        <span style="font-size:12px; color:rgba(255,255,255,0.2);">
-                            we genuinely didn't think anyone would get here 🤭
-                        </span>
-                    </p>
-                `;
-            }
-        }
+// Hub
+function updateHub() {
+    if(!state)return; calcStreak();
+    document.getElementById('hub-name').textContent=state.name+' ~';
+    document.getElementById('hub-level').textContent='diagnosis: '+state.level;
+    document.getElementById('hub-balance').textContent='$'+state.balance.toLocaleString();
+    document.getElementById('hub-streak').textContent=state.streakDays;
+    document.getElementById('hub-relapses').textContent=state.relapses;
+}
 
-        // Init
-        updateDepositLink();
-        if (loadState()) {
-            showScreen('screen-dashboard');
-        }
-    </script>
+// Bank
+function updateBank() {
+    if(!state)return; calcStreak();
+    document.getElementById('bank-balance').textContent='$'+state.balance.toLocaleString();
+    document.getElementById('bank-deposits').textContent=state.deposits+' deposit'+(state.deposits!==1?'s':'');
+    document.getElementById('bank-streak').textContent=state.streakDays;
+    document.getElementById('bank-streak-bar').style.width=Math.min(state.streakDays/30*100,100)+'%';
+    const list=document.getElementById('tx-list');
+    if(!state.transactions.length){list.innerHTML='<li class="tx-item dim" style="font-style:italic;">no transactions yet ~</li>';}
+    else{list.innerHTML=state.transactions.slice().reverse().slice(0,20).map(tx=>{
+        const d=new Date(tx.date).toLocaleDateString('en-NZ',{day:'numeric',month:'short'});
+        return tx.type==='deposit'?`<li class="tx-item"><span class="tx-type tx-deposit">deposit</span><span class="dim" style="font-size:11px;">${d}</span><span class="tx-amount">+$${tx.amount}</span></li>`:
+        `<li class="tx-item"><span class="tx-type tx-relapse">relapse</span><span class="dim" style="font-size:11px;">${d}</span><span style="color:#ff4444; font-size:12px;">streak reset</span></li>`;
+    }).join('');}
+}
+
+function selectAmount(amt,el) { selectedAmount=amt; document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); document.getElementById('custom-amount').value=''; }
+function recordDeposit() {
+    const custom=parseInt(document.getElementById('custom-amount').value)||0;
+    const amount=custom||selectedAmount;
+    if(amount<=0){event.preventDefault();showToast('pick an amount ~ 🤭');return;}
+    state.balance+=amount; state.deposits++;
+    state.transactions.push({type:'deposit',amount,date:new Date().toISOString()});
+    saveState(); showToast('$'+amount+' deposited ~ 💞'); setTimeout(()=>showScreen('screen-bank'),500);
+    document.getElementById('deposit-link').href=PAYMENT_URL;
+}
+
+// Relapse
+function openRelapseModal(){document.getElementById('relapseModal').classList.add('show');}
+function closeModal(){document.getElementById('relapseModal').classList.remove('show');}
+function confirmRelapse() {
+    if(state.streakDays>state.bestStreak) state.bestStreak=state.streakDays;
+    state.relapses++; state.streakDays=0; state.lastCleanDate=new Date().toISOString();
+    state.transactions.push({type:'relapse',date:new Date().toISOString()});
+    state.relapseDates.push(new Date().toISOString().split('T')[0]);
+    saveState(); closeModal(); updateBank();
+    const msgs=['streak reset ~ see u tomorrow 🤭','day 0 again ~ knew it 💞','there it is ~ clock resets 🤭','maybe next time ~ (there\'s always a next time) 💞'];
+    showToast(msgs[Math.floor(Math.random()*msgs.length)]);
+}
+function logRelapse() {
+    if(state.streakDays>state.bestStreak) state.bestStreak=state.streakDays;
+    state.relapses++; state.streakDays=0; state.lastCleanDate=new Date().toISOString();
+    state.transactions.push({type:'relapse',date:new Date().toISOString()});
+    const today=new Date().toISOString().split('T')[0];
+    if(!state.relapseDates.includes(today)) state.relapseDates.push(today);
+    saveState(); updateTracker();
+    showToast('relapse logged ~ day 0 again 💔');
+}
+
+// Tracker
+function updateTracker() {
+    if(!state)return; calcStreak();
+    document.getElementById('tracker-total').textContent=state.relapses;
+    document.getElementById('tracker-streak').textContent=state.streakDays;
+    document.getElementById('tracker-best').textContent=state.bestStreak||0;
+    // Weekly count
+    const now=new Date(); const weekAgo=new Date(now-7*24*60*60*1000);
+    const weekly=state.relapseDates.filter(d=>new Date(d)>=weekAgo).length;
+    document.getElementById('tracker-weekly').textContent=weekly;
+    // Calendar
+    const cal=document.getElementById('tracker-calendar');
+    let html='';
+    for(let i=27;i>=0;i--){
+        const d=new Date(); d.setDate(d.getDate()-i);
+        const ds=d.toISOString().split('T')[0];
+        const isToday=i===0;
+        const relapsed=state.relapseDates.includes(ds);
+        const clean=!relapsed&&new Date(state.created)<=d;
+        html+=`<div class="cal-day ${relapsed?'relapsed':''} ${clean?'clean':''} ${isToday?'today':''}">${d.getDate()}</div>`;
+    }
+    cal.innerHTML=html;
+}
+
+// Withdraw
+function updateWithdraw() {
+    if(!state)return; calcStreak();
+    const remaining=Math.max(0,30-state.streakDays);
+    document.getElementById('days-remaining').textContent=remaining;
+    if(remaining<=0){
+        document.getElementById('withdraw-card').innerHTML=`
+            <div style="font-size:48px;margin-bottom:12px;">🤯</div>
+            <p style="font-size:16px;color:#ff1493;font-weight:600;">wait... u actually made it??</p>
+            <p style="font-size:14px;color:rgba(255,255,255,0.4);margin-top:12px;line-height:1.7;">
+                30 days clean ~ we genuinely didn't think anyone would get here 💞<br><br>
+                DM <span class="pink">@bank4addicts</span> on Twitter to arrange ur withdrawal ~
+            </p>`;
+    }
+}
+
+// Init
+document.getElementById('deposit-link').href=PAYMENT_URL;
+if(loadState()) showScreen('screen-hub');
+</script>
 </body>
 </html>
