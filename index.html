@@ -233,6 +233,7 @@
         </div>
 
         <div class="fine-print">bank4addicts ~ est. 2026 💞</div>
+        <p class="back-link" onclick="logout()" style="color:rgba(255,0,0,0.3);">logout / reset account</p>
     </div>
 
     <!-- BANK -->
@@ -545,6 +546,15 @@ function updateWithdraw() {
                 30 days clean ~ we genuinely didn't think anyone would get here 💞<br><br>
                 DM <span class="pink">@bank4addicts</span> on Twitter to arrange ur withdrawal ~
             </p>`;
+    }
+}
+
+function logout() {
+    if(confirm('reset ur account? this deletes everything ~')) {
+        localStorage.removeItem('bank4addicts');
+        state=null;
+        showScreen('screen-landing');
+        showToast('account deleted ~ see u soon 🤭');
     }
 }
 
