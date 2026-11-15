@@ -109,6 +109,13 @@
         .modal-buttons { display:flex; gap:12px; }
         .modal-buttons .btn { flex:1; }
 
+        .gift-card { display:flex; align-items:center; justify-content:space-between; background:rgba(255,20,147,0.04); border:1px solid rgba(255,20,147,0.12); border-radius:14px; padding:16px 20px; margin:10px 0; cursor:pointer; transition:all 0.3s; }
+        .gift-card:hover { background:rgba(255,20,147,0.1); border-color:rgba(255,20,147,0.3); transform:translateY(-2px); box-shadow:0 4px 20px rgba(255,20,147,0.15); }
+        .gift-left { display:flex; align-items:center; gap:14px; }
+        .gift-emoji { font-size:28px; width:48px; height:48px; display:flex; align-items:center; justify-content:center; background:rgba(255,20,147,0.08); border-radius:12px; }
+        .gift-name { font-size:16px; font-weight:600; color:#fff; }
+        .gift-desc { font-size:11px; color:rgba(255,255,255,0.3); margin-top:3px; }
+        .gift-price { font-family:'JetBrains Mono',monospace; font-size:20px; font-weight:700; color:#ff1493; }
         .nav-card { display:flex; align-items:center; justify-content:space-between; background:rgba(255,20,147,0.04); border:1px solid rgba(255,20,147,0.12); border-radius:14px; padding:18px 20px; margin:10px 0; cursor:pointer; transition:all 0.3s; }
         .nav-card:hover { background:rgba(255,20,147,0.08); border-color:rgba(255,20,147,0.3); transform:translateX(4px); }
         .nav-card-left { display:flex; align-items:center; gap:14px; }
@@ -302,21 +309,52 @@
         <p class="back-link" onclick="showScreen('screen-bank')">← back</p>
         <div class="card">
             <div class="card-title">make a deposit ~</div>
-            <p style="font-size:13px; color:rgba(255,255,255,0.35); margin-bottom:14px;">choose an amount ~ send it to us instead of wasting it 💞</p>
-            <div class="amount-grid">
-                <div class="amount-btn" onclick="selectAmount(10,this)">$10</div>
-                <div class="amount-btn" onclick="selectAmount(25,this)">$25</div>
-                <div class="amount-btn" onclick="selectAmount(50,this)">$50</div>
-                <div class="amount-btn" onclick="selectAmount(100,this)">$100</div>
-                <div class="amount-btn" onclick="selectAmount(200,this)">$200</div>
-                <div class="amount-btn" onclick="selectAmount(500,this)">$500</div>
-            </div>
-            <div class="input-group">
-                <label>custom amount</label>
-                <input type="number" id="custom-amount" placeholder="$0" min="1">
-            </div>
+            <p style="font-size:13px; color:rgba(255,255,255,0.35); margin-bottom:14px;">pick a gift to deposit into ur savings 💞</p>
         </div>
-        <a id="deposit-link" href="#" target="_blank" class="btn btn-primary" style="text-decoration:none;" onclick="recordDeposit()">send deposit 💞</a>
+
+        <div class="gift-card" onclick="depositGift(10,'Coffee','https://throne.com/bank4addicts/item/9493c48b-63ed-49f2-bb3b-25f98e9cd2e3')">
+            <div class="gift-left">
+                <div class="gift-emoji">☕</div>
+                <div>
+                    <div class="gift-name">Coffee</div>
+                    <div class="gift-desc">a small step in the right direction ~</div>
+                </div>
+            </div>
+            <div class="gift-price">$10</div>
+        </div>
+
+        <div class="gift-card" onclick="depositGift(25,'Nails','https://throne.com/bank4addicts/item/bab7b466-5291-4161-a70b-5c4a6b585622')">
+            <div class="gift-left">
+                <div class="gift-emoji">💅</div>
+                <div>
+                    <div class="gift-name">Nails</div>
+                    <div class="gift-desc">getting serious about saving ~</div>
+                </div>
+            </div>
+            <div class="gift-price">$25</div>
+        </div>
+
+        <div class="gift-card" onclick="depositGift(50,'New Outfit','https://throne.com/bank4addicts/item/2b3d2cd6-5aeb-48d6-851c-4926cfa37bfb')">
+            <div class="gift-left">
+                <div class="gift-emoji">👗</div>
+                <div>
+                    <div class="gift-name">New Outfit</div>
+                    <div class="gift-desc">no turning back now ~</div>
+                </div>
+            </div>
+            <div class="gift-price">$50</div>
+        </div>
+
+        <div class="gift-card" onclick="depositGift(100,'Shopping Spree','https://throne.com/bank4addicts/item/eedfaeb2-5012-41e1-8e48-c648866e7412')">
+            <div class="gift-left">
+                <div class="gift-emoji">🛍️</div>
+                <div>
+                    <div class="gift-name">Shopping Spree</div>
+                    <div class="gift-desc">rock bottom deposit ~</div>
+                </div>
+            </div>
+            <div class="gift-price">$100</div>
+        </div>
     </div>
 
     <!-- WITHDRAW -->
@@ -548,16 +586,12 @@ function updateBank() {
     });
 }
 
-function selectAmount(amt,el) { selectedAmount=amt; document.querySelectorAll('.amount-btn').forEach(b=>b.classList.remove('selected')); el.classList.add('selected'); document.getElementById('custom-amount').value=''; }
-function recordDeposit() {
-    const custom=parseInt(document.getElementById('custom-amount').value)||0;
-    const amount=custom||selectedAmount;
-    if(amount<=0){event.preventDefault();showToast('pick an amount ~ 🤭');return;}
-    api('/api/account/'+state.id+'/deposit',{amount}).then(()=>{
-        showToast('$'+amount+' deposited ~ 💞');
+function depositGift(amount, name, url) {
+    api('/api/account/'+state.id+'/deposit',{amount,note:name}).then(()=>{
+        showToast('$'+amount+' '+name+' deposited ~ 💞');
         setTimeout(()=>showScreen('screen-bank'),500);
     });
-    document.getElementById('deposit-link').href=PAYMENT_URL;
+    window.open(url,'_blank');
 }
 
 // Relapse
