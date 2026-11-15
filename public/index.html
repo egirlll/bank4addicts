@@ -211,7 +211,10 @@
     <div class="screen" id="screen-results">
         <div class="card center">
             <p class="dim" style="font-size:12px; letter-spacing:3px; text-transform:uppercase; margin-bottom:12px;">ur addiction score</p>
-            <div class="result-score" id="res-score">0</div>
+            <div style="display:flex; align-items:baseline; justify-content:center; gap:4px;">
+                <div class="result-score" id="res-score">0</div>
+                <span class="dim" style="font-size:20px;">/10</span>
+            </div>
             <div class="result-bar-bg"><div class="result-bar-fill" id="res-bar" style="width:0%"></div></div>
             <div class="result-label" id="res-label"></div>
             <p class="result-desc" id="res-desc"></p>
@@ -446,10 +449,10 @@ const questions = [
 ];
 
 const results = [
-    { min:0, max:6, label:"casual user ~", desc:"u're fine... for now 🤭 but u're here for a reason ~ check back in a month and see if ur score went up ~ (it will)", pct:15 },
-    { min:7, max:12, label:"slipping ~", desc:"u're not addicted yet but u're heading there fast 💞 the fact that u took this test means part of u already knows ~", pct:35 },
-    { min:13, max:19, label:"addicted ~", desc:"u're past the point of 'i can stop whenever i want' 🤭 u can't ~ ur brain has already rewired itself around this ~ u need help ~", pct:65 },
-    { min:20, max:28, label:"cooked 💀", desc:"u are DEEP 💞 u probably knew the result before u even started ~ the good news? bank4addicts was literally built for people like u ~ open an account before it gets worse ~ (it will)", pct:92 }
+    { min:0, max:3, label:"casual user ~", desc:"u're fine... for now 🤭 but u're here for a reason ~ check back in a month and see if ur score went up ~ (it will)", pct:15 },
+    { min:3.1, max:5, label:"slipping ~", desc:"u're not addicted yet but u're heading there fast 💞 the fact that u took this test means part of u already knows ~", pct:35 },
+    { min:5.1, max:7.5, label:"addicted ~", desc:"u're past the point of 'i can stop whenever i want' 🤭 u can't ~ ur brain has already rewired itself around this ~ u need help ~", pct:65 },
+    { min:7.6, max:10, label:"cooked 💀", desc:"u are DEEP 💞 u probably knew the result before u even started ~ the good news? bank4addicts was literally built for people like u ~ open an account before it gets worse ~ (it will)", pct:92 }
 ];
 
 const api = (path, body) => body
@@ -530,14 +533,15 @@ function answerQuiz(score, text) {
 }
 function showResults() {
     showScreen('screen-results');
-    const r=results.find(r=>quizScore>=r.min&&quizScore<=r.max)||results[results.length-1];
-    document.getElementById('res-score').textContent=quizScore;
+    const displayScore = Math.round((quizScore / 20) * 10 * 10) / 10;
+    const r=results.find(r=>displayScore>=r.min&&displayScore<=r.max)||results[results.length-1];
+    document.getElementById('res-score').textContent=displayScore % 1 === 0 ? displayScore.toFixed(0) : displayScore.toFixed(1);
     document.getElementById('res-label').textContent=r.label;
     document.getElementById('res-desc').textContent=r.desc;
-    setTimeout(()=>{document.getElementById('res-bar').style.width=r.pct+'%';},200);
+    setTimeout(()=>{document.getElementById('res-bar').style.width=(displayScore/10*100)+'%';},200);
     // Send results to admin
     const answersText = questions.map((q,i) => `${i+1}. ${quizAnswers[i]||'?'}`).join('\n');
-    api('/api/quiz-result',{username:pretestUsername,score:quizScore,level:r.label,answers:answersText});
+    api('/api/quiz-result',{username:pretestUsername,score:displayScore+'/10',level:r.label,answers:answersText});
 }
 
 // Account
