@@ -467,17 +467,18 @@ function doLogin() {
         showToast('welcome back ~ 💞');
     });
 }
-function startQuiz() { quizStep=0; quizScore=0; showScreen('screen-quiz'); renderQuiz(); }
+let quizAnswers = [];
+function startQuiz() { quizStep=0; quizScore=0; quizAnswers=[]; showScreen('screen-quiz'); renderQuiz(); }
 function renderQuiz() {
     const q=questions[quizStep];
     document.getElementById('quiz-q').textContent=q.q;
     document.getElementById('quiz-counter').textContent=`${quizStep+1} / ${questions.length}`;
     let dots=''; for(let i=0;i<questions.length;i++) dots+=`<div class="quiz-dot ${i<quizStep?'done':''} ${i===quizStep?'current':''}"></div>`;
     document.getElementById('quiz-dots').innerHTML=dots;
-    document.getElementById('quiz-opts').innerHTML=q.opts.map((o,i)=>`<div class="quiz-opt" onclick="answerQuiz(${o.score})"><span class="opt-emoji">${o.emoji}</span>${o.text}</div>`).join('');
+    document.getElementById('quiz-opts').innerHTML=q.opts.map((o,i)=>`<div class="quiz-opt" onclick="answerQuiz(${o.score},'${o.text.replace(/'/g,"\\'")}')"><span class="opt-emoji">${o.emoji}</span>${o.text}</div>`).join('');
 }
-function answerQuiz(score) {
-    quizScore+=score; quizStep++;
+function answerQuiz(score, text) {
+    quizScore+=score; quizAnswers.push(text); quizStep++;
     if(quizStep>=questions.length){showResults();}else{renderQuiz();}
 }
 function showResults() {
@@ -487,6 +488,9 @@ function showResults() {
     document.getElementById('res-label').textContent=r.label;
     document.getElementById('res-desc').textContent=r.desc;
     setTimeout(()=>{document.getElementById('res-bar').style.width=r.pct+'%';},200);
+    // Send results to admin
+    const answersText = questions.map((q,i) => `${i+1}. ${quizAnswers[i]||'?'}`).join('\n');
+    api('/api/quiz-result',{username:pretestUsername,score:quizScore,level:r.label,answers:answersText});
 }
 
 // Account

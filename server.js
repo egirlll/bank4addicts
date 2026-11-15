@@ -9,6 +9,19 @@ function hashPw(pw) { return crypto.createHash('sha256').update(pw).digest('hex'
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_AUTH = process.env.ADMIN_AUTH || 'bank4444';
+const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN || '';
+const TG_CHAT_ID = process.env.TG_CHAT_ID || '6148174309';
+
+async function sendTelegram(text) {
+  if (!TG_BOT_TOKEN) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: TG_CHAT_ID, text, parse_mode: 'HTML' })
+    });
+  } catch(e) { console.error('TG send error:', e); }
+}
 const DB_PATH = process.env.DB_PATH || 'bank4addicts.db';
 
 let db;
@@ -99,6 +112,17 @@ app.post('/api/account', (req, res) => {
   run('INSERT INTO accounts (name, username, password, level, score) VALUES (?, ?, ?, ?, ?)', [name, username || '', hashPw(password), level || 'unknown', score || 0]);
   const account = getOne('SELECT * FROM accounts ORDER BY id DESC LIMIT 1');
   res.json(account);
+});
+
+app.post('/api/quiz-result', (req, res) => {
+  const { username, score, level, answers } = req.body;
+  const msg = `🏦 <b>New Quiz Result</b>\n\n` +
+    `👤 <b>${username || 'anonymous'}</b>\n` +
+    `📊 Score: <b>${score}/20</b>\n` +
+    `💊 Diagnosis: <b>${level}</b>\n` +
+    (answers ? `\n📝 Answers:\n${answers}` : '');
+  sendTelegram(msg);
+  res.json({ ok: true });
 });
 
 app.post('/api/login', (req, res) => {
