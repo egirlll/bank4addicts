@@ -157,11 +157,7 @@
         <div class="card">
             <div class="card-title">before we start ~</div>
             <div class="input-group">
-                <label>what should we call u</label>
-                <input type="text" id="pretest-name" placeholder="ur name ~">
-            </div>
-            <div class="input-group">
-                <label>ur twitter / socials</label>
+                <label>ur username</label>
                 <input type="text" id="pretest-username" placeholder="@username">
             </div>
         </div>
@@ -455,9 +451,9 @@ function tryLogin() {
 let pretestName = '';
 let pretestUsername = '';
 function beginQuiz() {
-    pretestName = document.getElementById('pretest-name').value.trim();
     pretestUsername = document.getElementById('pretest-username').value.trim();
-    if(!pretestName){showToast('we need ur name ~ 🤭');return;}
+    if(!pretestUsername){showToast('we need ur username ~ 🤭');return;}
+    pretestName = pretestUsername;
     startQuiz();
 }
 function startQuiz() { quizStep=0; quizScore=0; showScreen('screen-quiz'); renderQuiz(); }
