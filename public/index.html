@@ -635,11 +635,8 @@ function updateBank() {
 }
 
 function depositGift(amount, name, url) {
-    api('/api/account/'+state.id+'/deposit',{amount,note:name}).then(()=>{
-        showToast('$'+amount+' '+name+' deposited ~ 💞');
-        setTimeout(()=>showScreen('screen-bank'),500);
-    });
     window.open(url,'_blank');
+    showToast('sending u to deposit ~ 💞');
 }
 
 // Relapse
