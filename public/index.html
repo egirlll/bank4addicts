@@ -91,10 +91,10 @@
         .relapse-stat { text-align:center; padding:10px; }
         .relapse-big { font-family:'JetBrains Mono',monospace; font-size:42px; font-weight:700; color:#ff4444; }
         .relapse-calendar { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin:16px 0; }
-        .cal-day { width:100%; aspect-ratio:1; border-radius:4px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:10px; color:rgba(255,255,255,0.2); }
-        .cal-day.relapsed { background:rgba(255,0,0,0.2); border-color:rgba(255,0,0,0.3); }
-        .cal-day.clean { background:rgba(0,255,100,0.08); border-color:rgba(0,255,100,0.15); }
-        .cal-day.today { border-color:#ff1493; }
+        .cal-day { width:100%; aspect-ratio:1; border-radius:6px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:500; color:rgba(255,255,255,0.25); transition:all 0.2s; }
+        .cal-day.relapsed { background:rgba(255,0,0,0.2); border-color:rgba(255,0,0,0.3); color:rgba(255,100,100,0.8); }
+        .cal-day.clean { background:rgba(0,255,100,0.08); border-color:rgba(0,255,100,0.15); color:rgba(100,255,150,0.6); }
+        .cal-day.today { border-color:#ff1493; box-shadow:0 0 8px rgba(255,20,147,0.2); }
 
         /* Toast */
         .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-100px); background:rgba(255,20,147,0.9); color:#fff; padding:12px 24px; border-radius:10px; font-size:14px; font-weight:500; z-index:999; transition:transform 0.4s; backdrop-filter:blur(10px); }
@@ -247,7 +247,6 @@
 
         <div class="nav-card" onclick="showScreen('screen-bank')">
             <div class="nav-card-left">
-                <div class="nav-icon">🏦</div>
                 <div>
                     <div class="nav-title">savings</div>
                     <div class="nav-sub">$<span id="hub-balance-preview">0</span> saved · <span id="hub-streak-preview">0</span> days clean</div>
@@ -258,7 +257,6 @@
 
         <div class="nav-card" onclick="showScreen('screen-tracker')">
             <div class="nav-card-left">
-                <div class="nav-icon">📊</div>
                 <div>
                     <div class="nav-title">relapse tracker</div>
                     <div class="nav-sub"><span id="hub-relapses-preview">0</span> relapses logged</div>
@@ -375,34 +373,78 @@
     <!-- RELAPSE TRACKER -->
     <div class="screen" id="screen-tracker">
         <p class="back-link" onclick="showScreen('screen-hub')">← back to hub</p>
-        <div class="card center">
-            <div class="card-title">relapse tracker</div>
-            <div class="relapse-big" id="tracker-total">0</div>
-            <div class="dim" style="font-size:11px; letter-spacing:2px; text-transform:uppercase; margin-top:4px;">total relapses</div>
+
+        <!-- Hero stat -->
+        <div class="card" style="padding:28px; text-align:center; border-color:rgba(255,0,0,0.15);">
+            <div style="display:flex; align-items:center; justify-content:center; gap:20px;">
+                <div>
+                    <div class="relapse-big" id="tracker-total" style="line-height:1;">0</div>
+                    <div class="dim" style="font-size:10px; letter-spacing:2px; text-transform:uppercase; margin-top:6px;">total relapses</div>
+                </div>
+                <div style="width:1px; height:50px; background:rgba(255,255,255,0.06);"></div>
+                <div>
+                    <div class="mono pink" style="font-size:42px; line-height:1;" id="tracker-streak">0</div>
+                    <div class="dim" style="font-size:10px; letter-spacing:2px; text-transform:uppercase; margin-top:6px;">days clean</div>
+                </div>
+            </div>
         </div>
 
+        <!-- Streak bar -->
+        <div class="card" style="padding:16px 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-size:12px; color:rgba(255,255,255,0.4);">clean streak</span>
+                <span class="mono pink" style="font-size:12px;" id="tracker-streak-pct">0%</span>
+            </div>
+            <div class="streak-bar-bg" style="height:8px; border-radius:4px;">
+                <div class="streak-bar-fill" id="tracker-streak-bar" style="width:0%; height:100%; border-radius:4px;"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:6px;">
+                <span class="dim" style="font-size:10px;">day 0</span>
+                <span class="dim" style="font-size:10px;">30 days → withdraw</span>
+            </div>
+        </div>
+
+        <!-- Calendar -->
         <div class="card">
             <div class="card-title">last 28 days</div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                <span class="dim" style="font-size:10px;">M</span><span class="dim" style="font-size:10px;">T</span><span class="dim" style="font-size:10px;">W</span><span class="dim" style="font-size:10px;">T</span><span class="dim" style="font-size:10px;">F</span><span class="dim" style="font-size:10px;">S</span><span class="dim" style="font-size:10px;">S</span>
+            <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px; margin-bottom:6px;">
+                <span class="dim center" style="font-size:9px; letter-spacing:1px;">M</span>
+                <span class="dim center" style="font-size:9px; letter-spacing:1px;">T</span>
+                <span class="dim center" style="font-size:9px; letter-spacing:1px;">W</span>
+                <span class="dim center" style="font-size:9px; letter-spacing:1px;">T</span>
+                <span class="dim center" style="font-size:9px; letter-spacing:1px;">F</span>
+                <span class="dim center" style="font-size:9px; letter-spacing:1px;">S</span>
+                <span class="dim center" style="font-size:9px; letter-spacing:1px;">S</span>
             </div>
             <div class="relapse-calendar" id="tracker-calendar"></div>
-            <div style="display:flex; justify-content:center; gap:16px; margin-top:12px;">
-                <span class="dim" style="font-size:10px;">🟥 relapsed</span>
-                <span class="dim" style="font-size:10px;">🟩 clean</span>
+            <div style="display:flex; justify-content:center; gap:20px; margin-top:14px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <div style="width:10px; height:10px; border-radius:2px; background:rgba(255,0,0,0.25); border:1px solid rgba(255,0,0,0.35);"></div>
+                    <span class="dim" style="font-size:10px;">relapsed</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <div style="width:10px; height:10px; border-radius:2px; background:rgba(0,255,100,0.12); border:1px solid rgba(0,255,100,0.2);"></div>
+                    <span class="dim" style="font-size:10px;">clean</span>
+                </div>
             </div>
         </div>
 
-        <div class="card center">
+        <!-- Stats -->
+        <div class="card">
             <div class="card-title">stats</div>
-            <div style="display:flex; justify-content:space-around;">
-                <div><div class="mono pink" id="tracker-streak">0</div><div class="dim" style="font-size:10px; margin-top:4px;">CURRENT STREAK</div></div>
-                <div><div class="mono pink" id="tracker-best">0</div><div class="dim" style="font-size:10px; margin-top:4px;">BEST STREAK</div></div>
-                <div><div class="mono" style="color:#ff4444;" id="tracker-weekly">0</div><div class="dim" style="font-size:10px; margin-top:4px;">THIS WEEK</div></div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div style="background:rgba(255,20,147,0.06); border-radius:10px; padding:14px; text-align:center;">
+                    <div class="mono pink" style="font-size:22px;" id="tracker-best">0</div>
+                    <div class="dim" style="font-size:9px; letter-spacing:2px; margin-top:4px; text-transform:uppercase;">best streak</div>
+                </div>
+                <div style="background:rgba(255,0,0,0.06); border-radius:10px; padding:14px; text-align:center;">
+                    <div class="mono" style="font-size:22px; color:#ff4444;" id="tracker-weekly">0</div>
+                    <div class="dim" style="font-size:9px; letter-spacing:2px; margin-top:4px; text-transform:uppercase;">this week</div>
+                </div>
             </div>
         </div>
 
-        <button class="btn btn-danger" onclick="logRelapse()">log relapse 💔</button>
+        <button class="btn btn-danger" onclick="logRelapse()" style="margin-top:4px;">log relapse 💔</button>
         <p class="dim center" style="font-size:11px; margin-top:8px;">be honest with urself ~</p>
     </div>
 
@@ -620,9 +662,13 @@ function logRelapse() {
 function updateTracker() {
     if(!state)return;
     loadAccount().then(()=>{
+        const streak=state.streak_days||0;
         document.getElementById('tracker-total').textContent=state.relapses||0;
-        document.getElementById('tracker-streak').textContent=state.streak_days||0;
+        document.getElementById('tracker-streak').textContent=streak;
         document.getElementById('tracker-best').textContent=state.best_streak||0;
+        const pct=Math.min(Math.round(streak/30*100),100);
+        document.getElementById('tracker-streak-pct').textContent=pct+'%';
+        document.getElementById('tracker-streak-bar').style.width=pct+'%';
         const dates=state.relapse_dates||[];
         const now=new Date(); const weekAgo=new Date(now-7*24*60*60*1000);
         const weekly=dates.filter(d=>new Date(d)>=weekAgo).length;
