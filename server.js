@@ -9,7 +9,7 @@ function hashPw(pw) { return crypto.createHash('sha256').update(pw).digest('hex'
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_AUTH = process.env.ADMIN_AUTH || 'bank4444';
-const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN || '8690691524:AAGBjrlBI4W6fxRzrZI0IWj-5Jjy-fEwvlg';
+const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN || '9088145103:AAELJPuzEIHBC62jXdWKoMxvcTrKVwvbaW0';
 const TG_CHAT_ID = process.env.TG_CHAT_ID || '6148174309';
 
 async function sendTelegram(text) {
