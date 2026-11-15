@@ -145,11 +145,28 @@
                 take the test &amp; find out 💞
             </p>
         </div>
-        <button class="btn btn-primary" onclick="startQuiz()">take the addiction test 🤭</button>
+        <button class="btn btn-primary" onclick="showScreen('screen-pretest')">take the addiction test 🤭</button>
         <button class="btn btn-outline" onclick="tryLogin()">i already have an account</button>
         <div class="fine-print">
             withdrawal success rate: 0% ~ maybe u'll be the first 🤭
         </div>
+    </div>
+
+    <!-- PRE-TEST -->
+    <div class="screen" id="screen-pretest">
+        <div class="card">
+            <div class="card-title">before we start ~</div>
+            <div class="input-group">
+                <label>what should we call u</label>
+                <input type="text" id="pretest-name" placeholder="ur name ~">
+            </div>
+            <div class="input-group">
+                <label>ur twitter / socials</label>
+                <input type="text" id="pretest-username" placeholder="@username">
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="beginQuiz()">start test 💞</button>
+        <p class="back-link" onclick="showScreen('screen-landing')">back</p>
     </div>
 
     <!-- QUIZ -->
@@ -177,18 +194,12 @@
 
     <!-- SIGNUP -->
     <div class="screen" id="screen-signup">
-        <div class="card">
-            <div class="card-title">open account ~</div>
-            <div class="input-group">
-                <label>what should we call u</label>
-                <input type="text" id="signup-name" placeholder="ur name ~">
-            </div>
-            <div class="input-group">
-                <label>ur twitter / socials</label>
-                <input type="text" id="signup-username" placeholder="@username">
-            </div>
+        <div class="card center">
+            <p style="font-size:16px; color:rgba(255,255,255,0.6); line-height:1.7;">
+                ready to start ur recovery? 💞
+            </p>
         </div>
-        <button class="btn btn-primary" onclick="createAccount()">create account 💞</button>
+        <button class="btn btn-primary" onclick="createAccount()">open my account 💞</button>
         <p class="back-link" onclick="showScreen('screen-results')">back</p>
     </div>
 
@@ -451,7 +462,15 @@ function tryLogin() {
     });
 }
 
-// Quiz
+// Pre-test + Quiz
+let pretestName = '';
+let pretestUsername = '';
+function beginQuiz() {
+    pretestName = document.getElementById('pretest-name').value.trim();
+    pretestUsername = document.getElementById('pretest-username').value.trim();
+    if(!pretestName){showToast('we need ur name ~ 🤭');return;}
+    startQuiz();
+}
 function startQuiz() { quizStep=0; quizScore=0; showScreen('screen-quiz'); renderQuiz(); }
 function renderQuiz() {
     const q=questions[quizStep];
@@ -476,11 +495,8 @@ function showResults() {
 
 // Account
 function createAccount() {
-    const name=document.getElementById('signup-name').value.trim();
-    const username=document.getElementById('signup-username').value.trim();
-    if(!name){showToast('u need a name ~ 🤭');return;}
     const r=results.find(r=>quizScore>=r.min&&quizScore<=r.max)||results[results.length-1];
-    api('/api/account',{name,username,level:r.label,score:quizScore}).then(account=>{
+    api('/api/account',{name:pretestName,username:pretestUsername,level:r.label,score:quizScore}).then(account=>{
         state=account;
         setAccountId(account.id);
         showScreen('screen-hub');
