@@ -581,9 +581,75 @@ function confirmLogout() {
     showToast('account deleted ~ see u soon 🤭');
 }
 
+// Voucher claim
+function checkVoucher() {
+    const params = new URLSearchParams(window.location.search);
+    const deposit = parseInt(params.get('deposit'));
+    const code = params.get('code');
+    const note = params.get('note') || '';
+    if (!deposit || !code) return;
+
+    // Check if already claimed
+    const claimed = JSON.parse(localStorage.getItem('b4a_claimed') || '[]');
+    if (claimed.includes(code)) {
+        showToast('this voucher was already claimed ~ 🤭');
+        window.history.replaceState({}, '', window.location.pathname);
+        return;
+    }
+
+    // If no account, save voucher for after signup
+    if (!state) {
+        sessionStorage.setItem('b4a_pending_voucher', JSON.stringify({ deposit, code, note }));
+        showToast('$' + deposit + ' deposit waiting ~ create an account first 💞');
+        window.history.replaceState({}, '', window.location.pathname);
+        return;
+    }
+
+    // Credit account
+    claimVoucher(deposit, code, note);
+}
+
+function claimVoucher(amount, code, note) {
+    state.balance += amount;
+    state.deposits++;
+    state.transactions.push({
+        type: 'deposit',
+        amount,
+        note: note || 'voucher deposit',
+        date: new Date().toISOString()
+    });
+
+    // Mark as claimed
+    const claimed = JSON.parse(localStorage.getItem('b4a_claimed') || '[]');
+    claimed.push(code);
+    localStorage.setItem('b4a_claimed', JSON.stringify(claimed));
+
+    saveState();
+    window.history.replaceState({}, '', window.location.pathname);
+    showScreen('screen-hub');
+    showToast('$' + amount + ' deposited to ur account ~ 💞');
+}
+
+function checkPendingVoucher() {
+    const pending = sessionStorage.getItem('b4a_pending_voucher');
+    if (pending && state) {
+        const v = JSON.parse(pending);
+        claimVoucher(v.deposit, v.code, v.note);
+        sessionStorage.removeItem('b4a_pending_voucher');
+    }
+}
+
+// Patch createAccount to check pending vouchers after signup
+const _origCreateAccount = createAccount;
+createAccount = function() {
+    _origCreateAccount();
+    if (state) checkPendingVoucher();
+};
+
 // Init
 document.getElementById('deposit-link').href=PAYMENT_URL;
-if(loadState()) showScreen('screen-hub');
+if(loadState()) { showScreen('screen-hub'); checkVoucher(); }
+else { checkVoucher(); }
 </script>
 </body>
 </html>

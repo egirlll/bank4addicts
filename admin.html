@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bank4Addicts — Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:#0a0a0f; color:#fff; min-height:100vh; }
+        .container { max-width:500px; margin:0 auto; padding:20px; }
+        .header { text-align:center; padding:40px 0 20px; }
+        .header h1 { font-size:28px; font-weight:700; color:#ff1493; }
+        .header p { font-size:12px; color:rgba(255,255,255,0.3); margin-top:8px; letter-spacing:2px; text-transform:uppercase; }
+
+        #login-screen, #admin-screen { display:none; }
+        #login-screen.active, #admin-screen.active { display:block; }
+
+        .card { background:rgba(255,20,147,0.04); border:1px solid rgba(255,20,147,0.12); border-radius:16px; padding:24px; margin:14px 0; }
+        .card-title { font-size:12px; text-transform:uppercase; letter-spacing:2px; color:rgba(255,20,147,0.5); margin-bottom:14px; }
+
+        .input-group { margin:12px 0; }
+        .input-group label { display:block; font-size:11px; text-transform:uppercase; letter-spacing:2px; color:rgba(255,255,255,0.35); margin-bottom:8px; }
+        .input-group input { width:100%; padding:12px 16px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,20,147,0.2); border-radius:10px; color:#fff; font-family:'Inter',sans-serif; font-size:15px; outline:none; }
+        .input-group input:focus { border-color:#ff1493; }
+
+        .btn { display:block; width:100%; padding:14px; border:none; border-radius:12px; font-family:'Inter',sans-serif; font-size:15px; font-weight:600; cursor:pointer; transition:all 0.3s; margin:8px 0; text-align:center; }
+        .btn-primary { background:linear-gradient(135deg,#ff1493,#ff69b4); color:#fff; box-shadow:0 4px 20px rgba(255,20,147,0.3); }
+        .btn-primary:hover { transform:translateY(-2px); }
+        .btn-outline { background:transparent; color:#ff1493; border:1px solid rgba(255,20,147,0.3); }
+        .btn-small { display:inline-block; width:auto; padding:8px 20px; font-size:13px; }
+
+        .amount-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:14px 0; }
+        .amount-btn { padding:14px; background:rgba(255,20,147,0.06); border:1px solid rgba(255,20,147,0.15); border-radius:10px; color:#ff1493; font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; cursor:pointer; transition:all 0.2s; text-align:center; }
+        .amount-btn:hover,.amount-btn.selected { background:rgba(255,20,147,0.15); border-color:#ff1493; }
+
+        .link-output { width:100%; padding:12px; background:rgba(255,20,147,0.08); border:1px solid rgba(255,20,147,0.2); border-radius:10px; color:#ff1493; font-family:'JetBrains Mono',monospace; font-size:12px; word-break:break-all; margin:12px 0; cursor:pointer; }
+        .link-output:hover { background:rgba(255,20,147,0.15); }
+
+        .voucher-list { list-style:none; max-height:300px; overflow-y:auto; }
+        .voucher-item { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px; }
+        .voucher-amount { font-family:'JetBrains Mono',monospace; font-weight:600; color:#ff1493; }
+        .voucher-status { font-size:10px; padding:3px 8px; border-radius:4px; text-transform:uppercase; letter-spacing:1px; }
+        .status-pending { background:rgba(255,165,0,0.15); color:orange; }
+        .status-claimed { background:rgba(0,255,100,0.15); color:#00ff64; }
+
+        .dim { color:rgba(255,255,255,0.3); }
+        .pink { color:#ff1493; }
+        .mono { font-family:'JetBrains Mono',monospace; }
+        .center { text-align:center; }
+
+        .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-100px); background:rgba(255,20,147,0.9); color:#fff; padding:12px 24px; border-radius:10px; font-size:14px; font-weight:500; z-index:999; transition:transform 0.4s; }
+        .toast.show { transform:translateX(-50%) translateY(0); }
+    </style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="container">
+    <div class="header">
+        <h1>🏦 admin panel</h1>
+        <p>bank4addicts management</p>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="login-screen" class="active">
+        <div class="card">
+            <div class="card-title">enter admin pin</div>
+            <div class="input-group">
+                <input type="password" id="admin-pin" placeholder="pin ~" onkeydown="if(event.key==='Enter')adminLogin()">
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="adminLogin()">login</button>
+    </div>
+
+    <!-- ADMIN -->
+    <div id="admin-screen">
+        <div class="card">
+            <div class="card-title">create deposit voucher</div>
+            <p style="font-size:13px; color:rgba(255,255,255,0.35); margin-bottom:14px;">
+                pick an amount → generate a link → send it to the sub → they click it &amp; their account gets credited 💞
+            </p>
+
+            <div class="amount-grid">
+                <div class="amount-btn" onclick="selAmt(5,this)">$5</div>
+                <div class="amount-btn" onclick="selAmt(10,this)">$10</div>
+                <div class="amount-btn" onclick="selAmt(25,this)">$25</div>
+                <div class="amount-btn" onclick="selAmt(50,this)">$50</div>
+                <div class="amount-btn" onclick="selAmt(100,this)">$100</div>
+                <div class="amount-btn" onclick="selAmt(200,this)">$200</div>
+            </div>
+
+            <div class="input-group">
+                <label>custom amount</label>
+                <input type="number" id="custom-amt" placeholder="$0" min="1">
+            </div>
+
+            <div class="input-group">
+                <label>note (optional)</label>
+                <input type="text" id="voucher-note" placeholder="e.g. good boy deposit ~">
+            </div>
+
+            <button class="btn btn-primary" onclick="generateVoucher()">generate deposit link 💞</button>
+        </div>
+
+        <!-- Generated link -->
+        <div class="card" id="link-card" style="display:none;">
+            <div class="card-title">deposit link ready ~</div>
+            <div class="link-output" id="voucher-link" onclick="copyLink()"></div>
+            <button class="btn btn-outline btn-small" onclick="copyLink()">copy link</button>
+        </div>
+
+        <!-- Voucher history -->
+        <div class="card">
+            <div class="card-title">voucher history</div>
+            <ul class="voucher-list" id="voucher-list">
+                <li class="voucher-item dim" style="font-style:italic;">no vouchers yet ~</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+const ADMIN_PIN = '4444';
+const SITE_URL = window.location.origin;
+let selectedAmt = 0;
+
+function showToast(msg) {
+    const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+function adminLogin() {
+    const pin = document.getElementById('admin-pin').value;
+    if (pin === ADMIN_PIN) {
+        document.getElementById('login-screen').classList.remove('active');
+        document.getElementById('admin-screen').classList.add('active');
+        loadVouchers();
+    } else {
+        showToast('wrong pin ~ 🤭');
+    }
+}
+
+function selAmt(amt, el) {
+    selectedAmt = amt;
+    document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('custom-amt').value = '';
+}
+
+function generateVoucher() {
+    const custom = parseInt(document.getElementById('custom-amt').value) || 0;
+    const amount = custom || selectedAmt;
+    if (amount <= 0) { showToast('pick an amount ~ 🤭'); return; }
+
+    const note = document.getElementById('voucher-note').value.trim() || '';
+    const code = generateCode();
+    
+    // Save voucher
+    const vouchers = JSON.parse(localStorage.getItem('b4a_vouchers') || '[]');
+    vouchers.push({
+        code,
+        amount,
+        note,
+        created: new Date().toISOString(),
+        claimed: false
+    });
+    localStorage.setItem('b4a_vouchers', JSON.stringify(vouchers));
+
+    // Build link
+    const params = new URLSearchParams({ deposit: amount, code });
+    if (note) params.set('note', note);
+    const link = SITE_URL + '/?' + params.toString();
+
+    document.getElementById('voucher-link').textContent = link;
+    document.getElementById('link-card').style.display = 'block';
+
+    showToast('$' + amount + ' voucher created 💞');
+    loadVouchers();
+
+    // Reset
+    selectedAmt = 0;
+    document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('custom-amt').value = '';
+    document.getElementById('voucher-note').value = '';
+}
+
+function generateCode() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+}
+
+function copyLink() {
+    const link = document.getElementById('voucher-link').textContent;
+    navigator.clipboard.writeText(link).then(() => {
+        showToast('copied ~ send it to them 💞');
+    }).catch(() => {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = link;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('copied ~ send it to them 💞');
+    });
+}
+
+function loadVouchers() {
+    const vouchers = JSON.parse(localStorage.getItem('b4a_vouchers') || '[]');
+    const list = document.getElementById('voucher-list');
+    
+    if (vouchers.length === 0) {
+        list.innerHTML = '<li class="voucher-item dim" style="font-style:italic;">no vouchers yet ~</li>';
+        return;
+    }
+
+    list.innerHTML = vouchers.slice().reverse().map(v => {
+        const d = new Date(v.created).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        const status = v.claimed 
+            ? '<span class="voucher-status status-claimed">claimed</span>'
+            : '<span class="voucher-status status-pending">pending</span>';
+        const noteText = v.note ? `<span class="dim" style="font-size:11px;"> — ${v.note}</span>` : '';
+        return `<li class="voucher-item">
+            <div>
+                <span class="voucher-amount">$${v.amount}</span>${noteText}
+                <div class="dim" style="font-size:10px; margin-top:2px;">${v.code} · ${d}</div>
+            </div>
+            ${status}
+        </li>`;
+    }).join('');
+}
+</script>
+</body>
+</html>
