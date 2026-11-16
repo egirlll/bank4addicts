@@ -636,15 +636,18 @@ function createAccount() {
 // Hub
 function updateHub() {
     if(!state)return;
-    document.getElementById('hub-name').textContent=(state.username||state.name)+' ~';
-    document.getElementById('hub-level').textContent='diagnosis: '+state.level;
-    document.getElementById('hub-balance').textContent='$'+(state.balance||0).toLocaleString();
-    document.getElementById('hub-total-saved').textContent='$'+(state.balance||0).toLocaleString();
-    document.getElementById('hub-streak').textContent=state.streak_days||0;
-    document.getElementById('hub-relapses').textContent=state.relapses||0;
-    document.getElementById('hub-balance-preview').textContent=(state.balance||0).toLocaleString();
-    document.getElementById('hub-streak-preview').textContent=state.streak_days||0;
-    document.getElementById('hub-relapses-preview').textContent=state.relapses||0;
+    loadAccount().then(()=>{
+        if(!state)return;
+        document.getElementById('hub-name').textContent=(state.username||state.name)+' ~';
+        document.getElementById('hub-level').textContent='diagnosis: '+state.level;
+        document.getElementById('hub-balance').textContent='$'+(state.balance||0).toLocaleString();
+        document.getElementById('hub-total-saved').textContent='$'+(state.balance||0).toLocaleString();
+        document.getElementById('hub-streak').textContent=state.streak_days||0;
+        document.getElementById('hub-relapses').textContent=state.relapses||0;
+        document.getElementById('hub-balance-preview').textContent=(state.balance||0).toLocaleString();
+        document.getElementById('hub-streak-preview').textContent=state.streak_days||0;
+        document.getElementById('hub-relapses-preview').textContent=state.relapses||0;
+    });
 }
 
 // Bank
